@@ -1023,6 +1023,9 @@ namespace Quaver.Shared
         /// </summary>
         private void HandleOnlineHubInput()
         {
+            if (CurrentScreen?.Type == QuaverScreenType.Setup)
+                return;
+
             if (!KeyboardManager.IsUniqueKeyPress(Keys.F8) && !KeyboardManager.IsUniqueKeyPress(Keys.F9))
                 return;
 
@@ -1093,6 +1096,10 @@ namespace Quaver.Shared
                     break;
                 case QuaverScreenType.Theatre:
                     CurrentScreen?.Exit(() => new TheaterScreen());
+                    break;
+                case QuaverScreenType.Setup:
+                    CurrentScreen?.Exit(() => new Quaver.Shared.Screens.Setup.SetupScreen(
+                        ((Quaver.Shared.Screens.Setup.SetupScreen)CurrentScreen).CurrentStepIndex));
                     break;
             }
 

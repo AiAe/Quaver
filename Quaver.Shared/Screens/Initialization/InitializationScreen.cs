@@ -9,6 +9,7 @@ using Quaver.Shared.Graphics.Backgrounds;
 using Quaver.Shared.Graphics.Transitions;
 using Quaver.Shared.Online;
 using Quaver.Shared.Screens.Main;
+using Quaver.Shared.Screens.Setup;
 using Quaver.Shared.Skinning;
 using Steamworks;
 using Wobble;
@@ -90,7 +91,8 @@ namespace Quaver.Shared.Screens.Initialization
 
             new Thread(CleanOldMapBackups).Start();
 #if !VISUAL_TESTS
-            QuaverScreenManager.ScheduleScreenChange(() => new MainMenuScreen());
+            // Temporary visual-test startup override for the first-run setup screen.
+            QuaverScreenManager.ScheduleScreenChange(() => new SetupScreen());
 #endif
         }
 

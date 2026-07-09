@@ -316,6 +316,7 @@ namespace Quaver.Shared.Screens.Options
                 {
                     new OptionsSubcategory("Navigation & Maintenance", new List<OptionsItem>()
                     {
+                        new OptionsItemRunSetup(containerRect, "Run Setup"),
                         new OptionsItemOpenGameFolder(containerRect, "Open Game Folder"),
                         new OptionsItemUpdateRankedStatuses(containerRect, "Update Map Ranked Statuses"),
                         new OptionsItemUpdateOnlineOffsets(containerRect, "Update Map Online Offsets")

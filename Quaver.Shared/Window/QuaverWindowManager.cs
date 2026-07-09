@@ -71,6 +71,7 @@ namespace Quaver.Shared.Window
                     case QuaverScreenType.Multiplayer:
                     case QuaverScreenType.Music:
                     case QuaverScreenType.Theatre:
+                    case QuaverScreenType.Setup:
                         return true;
                 }
 

@@ -85,6 +85,11 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
         protected Qua Qua { get; }
 
         /// <summary>
+        ///     An optional fixed map for standalone previews that must not follow the player's selected map.
+        /// </summary>
+        protected Map PreviewMap { get; }
+
+        /// <summary>
         /// </summary>
         private DifficultySeekBar SeekBar { get; set; }
 
@@ -99,6 +104,11 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
         protected virtual bool ShowHitBubbles { get; } = true;
 
         /// <summary>
+        ///     Whether to show the one-time prompt for toggling preview autoplay.
+        /// </summary>
+        protected virtual bool ShouldShowTestPlayPrompt { get; } = true;
+
+        /// <summary>
         ///     The amount of delay before the task will run
         /// </summary>
         protected int DelayTime { get; set; } = 350;
@@ -106,12 +116,13 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
         /// <summary>
         /// </summary>
         public SelectMapPreviewContainer(Bindable<bool> isPlayTesting, Bindable<SelectContainerPanel> activeLeftPanel, int height,
-            IAudioTrack track = null, Qua qua = null)
+            IAudioTrack track = null, Qua qua = null, Map previewMap = null)
         {
             IsPlayTesting = isPlayTesting;
             ActiveLeftPanel = activeLeftPanel;
             Qua = qua;
             Track = track;
+            PreviewMap = previewMap;
             Size = new ScalableVector2(564, height);
             Alpha = 0f;
 
@@ -123,7 +134,8 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
 
             RunLoadTask();
 
-            MapManager.Selected.ValueChanged += OnMapChanged;
+            if (PreviewMap == null)
+                MapManager.Selected.ValueChanged += OnMapChanged;
             ActiveLeftPanel.ValueChanged += OnLeftPanelChanged;
             SkinManager.SkinLoaded += OnSkinLoaded;
 
@@ -150,7 +162,8 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
         public override void Destroy()
         {
             // ReSharper disable twice DelegateSubtraction
-            MapManager.Selected.ValueChanged -= OnMapChanged;
+            if (PreviewMap == null)
+                MapManager.Selected.ValueChanged -= OnMapChanged;
             ActiveLeftPanel.ValueChanged -= OnLeftPanelChanged;
             SkinManager.SkinLoaded -= OnSkinLoaded;
 
@@ -235,7 +248,7 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
             if (e.Result == null)
                 return;
 
-            if (MapManager.Selected.Value != e.Input)
+            if ((PreviewMap ?? MapManager.Selected.Value) != e.Input)
                 return;
 
             e.Input.Qua = e.Result.Map;
@@ -352,7 +365,9 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
             if (LoadedGameplayScreen != null && LoadedGameplayScreen.IsDisposed)
                 return;
 
-            if (MapManager.Selected.Value?.Qua == null)
+            var previewMap = PreviewMap ?? MapManager.Selected.Value;
+
+            if (previewMap?.Qua == null)
                 return;
 
             try
@@ -403,7 +418,7 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
         /// </summary>
         protected void RunLoadTask()
         {
-            var selectedMap = MapManager.Selected.Value;
+            var selectedMap = PreviewMap ?? MapManager.Selected.Value;
 
             if (selectedMap == null)
                 return;
@@ -507,7 +522,7 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
 
             SeekBar.AudioSeeked += (o, args) => RefreshScreen();
 
-            if (qua != MapManager.Selected.Value.Qua)
+            if (PreviewMap == null && qua != MapManager.Selected.Value.Qua)
             {
                 oldSeekBar?.Destroy();
                 SeekBar.Destroy();
@@ -540,7 +555,7 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
         /// </summary>
         private void ShowTestPlayPrompt()
         {
-            if (ShownTestPlayPrompt || ActiveLeftPanel.Value != SelectContainerPanel.MapPreview)
+            if (!ShouldShowTestPlayPrompt || ShownTestPlayPrompt || ActiveLeftPanel.Value != SelectContainerPanel.MapPreview)
                 return;
 
             if (LoadedGameplayScreen == null)

@@ -114,6 +114,11 @@ namespace Quaver.Shared.Config
         internal static Bindable<string> Language { get; private set; }
 
         /// <summary>
+        ///     Whether the player has completed or skipped the first-run setup wizard.
+        /// </summary>
+        internal static Bindable<bool> SetupFinished { get; private set; }
+
+        /// <summary>
         ///     The skin in the Skins directory that is loaded. Default is the only exception, as it'll be overrided.
         /// </summary>
         internal static Bindable<string> Skin { get; private set; }
@@ -1020,6 +1025,7 @@ namespace Quaver.Shared.Config
         private static void ReadConfigFile()
         {
             var configFilePath = _gameDirectory + "/quaver.cfg";
+            var hasValidExistingConfig = false;
 
             if (File.Exists(configFilePath))
             {
@@ -1027,6 +1033,7 @@ namespace Quaver.Shared.Config
                 {
                     // Delete the config file if we catch an exception.
                     var _ = new IniFileParser.IniFileParser(new ConcatenateDuplicatedKeysIniDataParser()).ReadFile(configFilePath)["Config"];
+                    hasValidExistingConfig = true;
                 }
                 catch (ParsingException)
                 {
@@ -1062,6 +1069,7 @@ namespace Quaver.Shared.Config
             SelectedGameMode = ReadValue(@"SelectedGameMode", GameMode.Keys4, data);
             Username = ReadValue(@"Username", "Player", data);
             Language = ReadValue(@"Language", "en", data);
+            SetupFinished = ReadValue(@"SetupFinished", hasValidExistingConfig, data);
             VolumeGlobal = ReadInt(@"VolumeGlobal", 20, 0, 100, data);
             VolumeEffect = ReadInt(@"VolumeEffect", 20, 0, 100, data);
             VolumeMusic = ReadInt(@"VolumeMusic", 50, 0, 100, data);
