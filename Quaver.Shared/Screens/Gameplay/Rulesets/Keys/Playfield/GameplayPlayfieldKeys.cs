@@ -27,6 +27,15 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
     public class GameplayPlayfieldKeys : IGameplayPlayfield
     {
         /// <summary>
+        ///     Experimental hardcoded toggle for the faux-3D playfield perspective.
+        /// </summary>
+        private const bool PerspectiveEnabled = true;
+
+        private const float PerspectiveFarEdgePosition = 0f;
+
+        private const float PerspectiveFarWidthScale = 0.25f;
+
+        /// <summary>
         ///     Reference to the current gameplay screen.
         /// </summary>
         public GameplayScreen Screen { get; }
@@ -40,6 +49,13 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
         /// <summary>
         /// </summary>
         public Container Container { get; set; }
+
+        /// <summary>
+        ///     The drawable that owns every element which should receive the perspective effect.
+        /// </summary>
+        internal Drawable ContentContainer { get; private set; }
+
+        private PerspectivePlayfieldContainer PerspectiveContainer { get; set; }
 
         /// <summary>
         ///     The background of the playfield.
@@ -199,10 +215,44 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                 Pivot = new Vector2(0.5f, 0.5f)
             };
             SetLaneScrollDirections();
+            CreatePerspectiveContainer();
             SetReferencePositions();
             CreateElementContainers();
             if (!Screen.IsSongSelectPreview)
                 Container.Scale = Vector2.One * (ConfigManager.PlayfieldScale.Value / 100f);
+        }
+
+        private void CreatePerspectiveContainer()
+        {
+            ContentContainer = Container;
+
+            if (!PerspectiveEnabled || Screen.IsSongSelectPreview)
+                return;
+
+            var direction = ConfigManager.ScrollDirections[Ruleset.Map.Mode].Value;
+            PerspectivePlayfieldOrientation orientation;
+
+            switch (direction)
+            {
+                case ScrollDirection.Down:
+                    orientation = PerspectivePlayfieldOrientation.Down;
+                    break;
+                case ScrollDirection.Up:
+                    orientation = PerspectivePlayfieldOrientation.Up;
+                    break;
+                case ScrollDirection.Split:
+                    return;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            PerspectiveContainer = new PerspectivePlayfieldContainer(orientation,
+                PerspectiveFarEdgePosition, PerspectiveFarWidthScale)
+            {
+                Parent = Container,
+                Pivot = Vector2.Zero
+            };
+            ContentContainer = PerspectiveContainer;
         }
 
 
@@ -214,7 +264,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
             // Create background container
             BackgroundContainer = new Container
             {
-                Parent = Container,
+                Parent = ContentContainer,
                 Size = new ScalableVector2(Width, WindowManager.Height),
                 Alignment = Alignment.TopCenter,
                 X = SkinManager.Skin.Keys[Screen.Map.Mode].ColumnAlignment,
@@ -223,7 +273,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
             // Create the foreground container.
             ForegroundContainer = new Container
             {
-                Parent = Container,
+                Parent = ContentContainer,
                 Size = new ScalableVector2(Width, WindowManager.Height),
                 Alignment = Alignment.TopCenter,
                 X = SkinManager.Skin.Keys[Screen.Map.Mode].ColumnAlignment
@@ -231,7 +281,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
 
             PlayfieldMask = new Sprite
             {
-                Parent = Container,
+                Parent = ContentContainer,
                 Image = UserInterface.PlayfieldMask,
                 Alignment = Alignment.MidCenter,
                 Size = new ScalableVector2(WindowManager.Width * 4, WindowManager.Height * 4),
@@ -393,7 +443,17 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
         /// <summary>
         /// </summary>
         /// <param name="gameTime"></param>
-        public void Draw(GameTime gameTime) => Container.Draw(gameTime);
+        public void Draw(GameTime gameTime)
+        {
+            if (PerspectiveContainer != null)
+            {
+                var playfieldCenter = BackgroundContainer.ScreenRectangle.X +
+                                      BackgroundContainer.ScreenRectangle.Width / 2;
+                PerspectiveContainer.ConvergencePointX = playfieldCenter / WindowManager.Width;
+            }
+
+            Container.Draw(gameTime);
+        }
 
         /// <inheritdoc />
         /// <summary>

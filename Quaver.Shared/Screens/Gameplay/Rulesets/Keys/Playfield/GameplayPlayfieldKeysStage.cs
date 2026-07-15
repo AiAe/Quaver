@@ -687,7 +687,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                     HealthBar.Y = -10;
                     break;
                 case HealthBarKeysAlignment.TopLeft:
-                    HealthBar.Parent = Playfield.Container;
+                    HealthBar.Parent = Playfield.ContentContainer;
                     HealthBar.Alignment = Alignment.TopLeft;
                     break;
             }
