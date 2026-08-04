@@ -26,6 +26,7 @@ using Quaver.Shared.Helpers;
 using Quaver.Shared.Modifiers;
 using Quaver.Shared.Online;
 using Quaver.Shared.Screens.Gameplay.Rulesets.Keys.HitObjects;
+using Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield;
 using Quaver.Shared.Screens.Gameplay.UI;
 using Quaver.Shared.Screens.Gameplay.UI.Counter;
 using Quaver.Shared.Screens.Gameplay.UI.Multiplayer;
@@ -202,6 +203,12 @@ namespace Quaver.Shared.Screens.Gameplay
         /// </summary>
         private ReplayController ReplayController { get; }
 
+        /// <summary>
+        ///     Contains the gameplay HUD. Omni keeps this layer hidden while leaving the
+        ///     playfield and non-gameplay overlays (such as pause and transitions) active.
+        /// </summary>
+        private Container GameplayUiContainer { get; }
+
         /// <inheritdoc />
         /// <summary>
         /// </summary>
@@ -214,6 +221,13 @@ namespace Quaver.Shared.Screens.Gameplay
                 true).OverallDifficulty);
 
             CreateBackground();
+
+            GameplayUiContainer = new Container
+            {
+                Parent = Container,
+                Size = new ScalableVector2(0, 0, 1, 1),
+                Visible = !(Screen.Ruleset.Playfield is GameplayPlayfieldKeys playfield && playfield.IsOmni)
+            };
 
             if (OnlineManager.CurrentGame != null && OnlineManager.CurrentGame.Ruleset == MultiplayerGameRuleset.Battle_Royale
                                                   && ConfigManager.EnableBattleRoyaleBackgroundFlashing.Value)
@@ -234,25 +248,25 @@ namespace Quaver.Shared.Screens.Gameplay
             CreateAccuracyDisplay();
 
             if (ConfigManager.DisplayComboAlerts.Value && !Screen.IsSongSelectPreview)
-                ComboAlert = new ComboAlert(Screen.Ruleset.ScoreProcessor) { Parent = Container };
+                ComboAlert = new ComboAlert(Screen.Ruleset.ScoreProcessor) { Parent = GameplayUiContainer };
 
             // Create judgement status display
             if (ConfigManager.DisplayJudgementCounter.Value)
             {
                 if (OnlineManager.CurrentGame == null || OnlineManager.CurrentGame.Ruleset != MultiplayerGameRuleset.Team)
-                    JudgementCounter = new JudgementCounter(Screen) { Parent = Container };
+                    JudgementCounter = new JudgementCounter(Screen) { Parent = GameplayUiContainer };
             }
 
             CreateKeysPerSecondDisplay();
             CreateGradeDisplay();
 
-            SkipDisplay = new SkipDisplay(Screen, SkinManager.Skin.Skip) { Parent = Container };
+            SkipDisplay = new SkipDisplay(Screen, SkinManager.Skin.Skip) { Parent = GameplayUiContainer };
 
             if (Screen.IsMultiplayerGame)
             {
                 MultiplayerEndTime = new MultiplayerEndGameWaitTime
                 {
-                    Parent = Container,
+                    Parent = GameplayUiContainer,
                     Alignment = Alignment.MidCenter
                 };
             }
@@ -261,7 +275,7 @@ namespace Quaver.Shared.Screens.Gameplay
             {
                 SpectatorDialog = new SpectatorDialog(Screen.SpectatorClient)
                 {
-                    Parent = Container,
+                    Parent = GameplayUiContainer,
                     Alignment = Alignment.MidCenter,
                     Alpha = 0
                 };
@@ -269,7 +283,7 @@ namespace Quaver.Shared.Screens.Gameplay
 
             SpectatorCount = new SpectatorCount
             {
-                Parent = Container,
+                Parent = GameplayUiContainer,
                 Y = 120,
                 Alignment = Alignment.TopRight,
                 X = -10
@@ -279,7 +293,7 @@ namespace Quaver.Shared.Screens.Gameplay
             {
                 ReplayController = new ReplayController(Screen)
                 {
-                    Parent = Container,
+                    Parent = GameplayUiContainer,
                     Alignment = Alignment.BotRight,
                     Position = new ScalableVector2(-12, -110)
                 };
@@ -401,7 +415,7 @@ namespace Quaver.Shared.Screens.Gameplay
             ProgressBar = new SongTimeProgressBar(Screen, new Vector2(WindowManager.Width, 4), 0, Screen.Map.Length / ModHelper.GetRateFromMods(ModManager.Mods), 0,
                 skin.SongTimeProgressInactiveColor, skin.SongTimeProgressActiveColor)
             {
-                Parent = Container,
+                Parent = GameplayUiContainer,
                 Alignment = skin.SongTimeProgressPositionAtTop ? Alignment.TopLeft : Alignment.BotLeft,
                 DestroyIfParentIsNull = false
             };
@@ -417,7 +431,7 @@ namespace Quaver.Shared.Screens.Gameplay
             ProgressBar = new SongTimeProgressBar(Screen, new Vector2(WindowManager.Width / SkinManager.Skin.Keys[Screen.Map.Mode].MiniSongBarDisplayWidthFactor, SkinManager.Skin.Keys[Screen.Map.Mode].MiniSongBarDisplayHeight), 0, Screen.Map.Length / ModHelper.GetRateFromMods(ModManager.Mods), 0,
                 skin.SongTimeProgressInactiveColor, skin.SongTimeProgressActiveColor, true)
             {
-                Parent = Container,
+                Parent = GameplayUiContainer,
                 Alignment = Alignment.MidCenter,
                 X = SkinManager.Skin.Keys[Screen.Map.Mode].MiniSongBarDisplayPosX,
                 Y = SkinManager.Skin.Keys[Screen.Map.Mode].MiniSongBarDisplayPosY,
@@ -435,7 +449,7 @@ namespace Quaver.Shared.Screens.Gameplay
             ScoreDisplay = new GameplayNumberDisplay(NumberDisplayType.Score, StringHelper.ScoreToString(0),
                 new Vector2(skin.ScoreDisplayScale / 100f, skin.ScoreDisplayScale / 100f))
             {
-                Parent = Container,
+                Parent = GameplayUiContainer,
                 Alignment = Alignment.TopLeft,
                 X = SkinManager.Skin.Keys[Screen.Map.Mode].ScoreDisplayPosX,
                 Y = SkinManager.Skin.Keys[Screen.Map.Mode].ScoreDisplayPosY
@@ -452,7 +466,7 @@ namespace Quaver.Shared.Screens.Gameplay
             RatingDisplay = new GameplayNumberDisplay(NumberDisplayType.Rating, StringHelper.RatingToString(0),
                 new Vector2(skin.RatingDisplayScale / 100f, skin.RatingDisplayScale / 100f))
             {
-                Parent = Container,
+                Parent = GameplayUiContainer,
                 Alignment = Alignment.TopLeft,
                 X = SkinManager.Skin.Keys[Screen.Map.Mode].RatingDisplayPosX,
                 Y = 40 + SkinManager.Skin.Keys[Screen.Map.Mode].RatingDisplayPosY
@@ -469,7 +483,7 @@ namespace Quaver.Shared.Screens.Gameplay
             AccuracyDisplay = new GameplayNumberDisplay(NumberDisplayType.Accuracy, StringHelper.AccuracyToString(0),
                 new Vector2(skin.AccuracyDisplayScale / 100f, skin.AccuracyDisplayScale / 100f))
             {
-                Parent = Container,
+                Parent = GameplayUiContainer,
                 Alignment = Alignment.TopRight,
                 X = SkinManager.Skin.Keys[Screen.Map.Mode].AccuracyDisplayPosX,
                 Y = SkinManager.Skin.Keys[Screen.Map.Mode].AccuracyDisplayPosY
@@ -501,7 +515,7 @@ namespace Quaver.Shared.Screens.Gameplay
             // Create KPS display
             KpsDisplay = new KeysPerSecond(NumberDisplayType.Score, "0", new Vector2(skin.KpsDisplayScale / 100f, skin.KpsDisplayScale / 100f))
             {
-                Parent = Container,
+                Parent = GameplayUiContainer,
                 Alignment = Alignment.TopRight,
                 X = SkinManager.Skin.Keys[Screen.Map.Mode].KpsDisplayPosX,
                 Y = 40 + SkinManager.Skin.Keys[Screen.Map.Mode].KpsDisplayPosY
@@ -513,7 +527,7 @@ namespace Quaver.Shared.Screens.Gameplay
         /// </summary>
         private void CreateGradeDisplay() => GradeDisplay = new GradeDisplay(Screen)
         {
-            Parent = Container,
+            Parent = GameplayUiContainer,
             Alignment = Alignment.TopRight,
             X = AccuracyDisplay.X - AccuracyDisplay.Width - 8,
             Y = AccuracyDisplay.Y
@@ -533,7 +547,7 @@ namespace Quaver.Shared.Screens.Gameplay
             SelfScoreboard = new ScoreboardUser(Screen, ScoreboardUserType.Self, scoreboardName, null, selfAvatar,
                 ModManager.Mods, null, RatingProcessor)
             {
-                Parent = Container,
+                Parent = GameplayUiContainer,
                 Alignment = Alignment.MidLeft
             };
 
@@ -545,7 +559,7 @@ namespace Quaver.Shared.Screens.Gameplay
                 ScoreboardRight = new Scoreboard(ScoreboardType.Teams,
                     OnlineManager.GetTeam(OnlineManager.Self.OnlineUser.Id) == MultiplayerTeam.Blue ? users : new List<ScoreboardUser>(), MultiplayerTeam.Blue)
                 {
-                    Parent = Container,
+                    Parent = GameplayUiContainer,
                     Alignment = Alignment.TopLeft,
                 };
             }
@@ -559,7 +573,7 @@ namespace Quaver.Shared.Screens.Gameplay
             ScoreboardLeft = new Scoreboard(scoreboardType,
                 OnlineManager.CurrentGame == null || OnlineManager.GetTeam(OnlineManager.Self.OnlineUser.Id) == MultiplayerTeam.Red ?
                     users : new List<ScoreboardUser>())
-            { Parent = Container };
+            { Parent = GameplayUiContainer };
 
             ScoreboardLeft?.Users.ForEach(x => x.SetImage());
             ScoreboardRight?.Users.ForEach(x => x.SetImage());
@@ -625,7 +639,7 @@ namespace Quaver.Shared.Screens.Gameplay
                     user = new ScoreboardUser(Screen, ScoreboardUserType.Other, $"{mapScores[i].Name}",
                         judgements, UserInterface.UnknownAvatar, (ModIdentifier)mapScores[i].Mods, mapScores[i])
                     {
-                        Parent = Container,
+                        Parent = GameplayUiContainer,
                         Alignment = Alignment.MidLeft
                     };
 
@@ -671,7 +685,7 @@ namespace Quaver.Shared.Screens.Gameplay
                     user = new ScoreboardUser(Screen, ScoreboardUserType.Other, $"{mapScores[i].Name}",
                         judgements, UserInterface.UnknownAvatar, (ModIdentifier)mapScores[i].Mods, mapScores[i])
                     {
-                        Parent = Container,
+                        Parent = GameplayUiContainer,
                         Alignment = Alignment.MidLeft
                     };
 
@@ -713,7 +727,7 @@ namespace Quaver.Shared.Screens.Gameplay
             // Re-change the transitioner and pause screen's parent so that they appear on top of the scoreboard
             // again.
             if (ProgressBar != null)
-                ProgressBar.Parent = Container;
+                ProgressBar.Parent = GameplayUiContainer;
 
             if (EpilepsyWarning != null)
                 EpilepsyWarning.Parent = Container;

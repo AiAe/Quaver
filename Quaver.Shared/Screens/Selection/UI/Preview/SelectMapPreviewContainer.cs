@@ -262,6 +262,7 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
                 playfield.Container.X = 0;
                 playfield.ForegroundContainer.X = 0;
                 playfield.BackgroundContainer.X = 0;
+                playfield.RefreshOmniLayout(Width, Height);
                 playfield.Stage.HitLightingObjects.ForEach(x =>
                 {
                     x.StopHolding();
@@ -318,6 +319,10 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
                             playfield.Stage.HitBubbles.Y *= previewMultiplier;
 
                         playfield.Stage.ComboDisplay.Y = playfield.Stage.ComboDisplay.OriginalPosY;
+                        break;
+                    case ScrollDirection.Omni:
+                        playfield.Container.Alignment = Alignment.TopLeft;
+                        playfield.Container.Position = new ScalableVector2(0, 0);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -477,7 +482,9 @@ namespace Quaver.Shared.Screens.Selection.UI.Preview
                 return;
             }
 
-            var stageRightWidth = (int)MathHelper.Clamp(playfield.Stage.StageRight.Width, 0, 8);
+            var stageRightWidth = playfield.Stage.StageRight == null
+                ? 0
+                : (int)MathHelper.Clamp(playfield.Stage.StageRight.Width, 0, 8);
 
             SeekBar = new DifficultySeekBar(qua, ModManager.Mods, new ScalableVector2(56, Height), 200)
             {

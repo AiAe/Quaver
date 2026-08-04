@@ -505,6 +505,7 @@ namespace Quaver.Shared.Screens.Options
                 new OptionsItemScrollDirection(
                     containerRect,
                     $"{ModeHelper.ToShortHand(mode)} Scroll Direction",
+                    mode,
                     ConfigManager.ScrollDirections[mode]
                 ),
                 new OptionsItemKeybindMultiple(

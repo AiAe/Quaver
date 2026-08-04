@@ -80,6 +80,10 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys
             var playfield = (GameplayPlayfieldKeys)Playfield;
             var keys = MapManager.Selected.Value.Qua?.GetKeyCount() ?? 4;
 
+            // Rectangular timing lines do not have a useful radial equivalent.
+            if (direction == ScrollDirection.Omni)
+                return;
+
             if (direction.Equals(ScrollDirection.Split))
             {
                 var halfIndex = (int)Math.Ceiling(keys / 2.0) - 1;

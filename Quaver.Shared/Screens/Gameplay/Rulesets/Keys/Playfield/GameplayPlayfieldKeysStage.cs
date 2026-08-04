@@ -53,6 +53,19 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
         /// </summary>
         public Container[] HitObjectContainers { get; private set; }
 
+        private Container[][] OmniHitObjectLaneRoots { get; set; }
+
+        private Container[] OmniHitLaneRoots { get; set; }
+
+        private Container[] OmniReceptorLaneRoots { get; set; }
+
+        /// <summary>
+        ///     Hidden parent for stage UI objects that are retained for scoring/replay callers in Omni.
+        /// </summary>
+        private Container OmniUiContainer { get; set; }
+
+        private List<SpriteTextPlus> KeybindOverlays { get; } = new List<SpriteTextPlus>();
+
         /// <summary>
         ///     The Container that holds every Timing Line object
         /// </summary>
@@ -168,6 +181,12 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
             Screen = screen;
             Playfield = playfield;
 
+            if (Playfield.IsOmni)
+            {
+                CreateOmniStage();
+                return;
+            }
+
             CreateStageLeft();
             CreateStageRight();
             CreateBgMask();
@@ -254,6 +273,59 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
 
             CreateHealthBar();
             CreateKeybindOverlay();
+        }
+
+        private void CreateOmniStage()
+        {
+            ColumnLightingObjects = new List<ColumnLighting>();
+
+            OmniUiContainer = new Container
+            {
+                Parent = Playfield.ForegroundContainer,
+                Size = new ScalableVector2(0, 0, 1, 1),
+                Visible = false
+            };
+
+            CreateTimingLineContainer();
+
+            if (Skin.ReceptorsOverHitObjects)
+            {
+                CreateHitObjectContainer();
+                CreateHitContainer();
+                CreateReceptorsAndLighting();
+            }
+            else
+            {
+                CreateReceptorsAndLighting();
+                CreateHitObjectContainer();
+                CreateHitContainer();
+            }
+
+            RefreshOmniLayout(Playfield.ForegroundContainer.Width, Playfield.ForegroundContainer.Height);
+
+            CreateComboDisplay();
+            CreateHitError();
+            CreateHitBubbles();
+            CreateJudgementHitBurst();
+            CreateHitLighting();
+            CreateHealthBar();
+            HideOmniStageUi();
+            RefreshOmniLayout(Playfield.ForegroundContainer.Width, Playfield.ForegroundContainer.Height);
+        }
+
+        /// <summary>
+        ///     Keeps required UI instances alive for existing gameplay code, but prevents their
+        ///     animations from becoming visible in Omni.
+        /// </summary>
+        private void HideOmniStageUi()
+        {
+            ComboDisplay.Parent = OmniUiContainer;
+            HitError.Parent = OmniUiContainer;
+            HitBubbles.Parent = OmniUiContainer;
+            HealthBar.Parent = OmniUiContainer;
+
+            foreach (var judgement in JudgementHitBursts)
+                judgement.Parent = OmniUiContainer;
         }
 
         /// <summary>
@@ -372,6 +444,9 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
             Receptors = new List<Sprite>();
             ColumnLightingObjects = new List<ColumnLighting>();
 
+            if (Playfield.IsOmni)
+                OmniReceptorLaneRoots = CreateOmniLaneRoots(Playfield.ForegroundContainer);
+
             var scratchLaneLeft = ConfigManager.ScratchLanesLeft[Screen.Map.Mode].Value;
 
             // Go through and create the receptors and column lighting objects.
@@ -406,17 +481,31 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                 if (scale != 1)
                     posX += (Playfield.LaneSize - Playfield.LaneSize * scale) / 2f;
 
+                var receptorHeight = (Playfield.LaneSize * Skin.NoteReceptorsUp[i].Height /
+                                      Skin.NoteReceptorsUp[i].Width) * scale;
+
+                if (Playfield.IsOmni)
+                    posX = -laneSize * scale / 2f;
+
                 // Create individiaul receptor.
                 Receptors.Add(new Sprite
                 {
-                    Parent = Playfield.ForegroundContainer,
-                    Size = new ScalableVector2(laneSize * scale, (Playfield.LaneSize * Skin.NoteReceptorsUp[i].Height / Skin.NoteReceptorsUp[i].Width) * scale),
-                    Position = new ScalableVector2(posX, Playfield.ReceptorPositionY[i]),
+                    Parent = Playfield.IsOmni ? OmniReceptorLaneRoots[i] : Playfield.ForegroundContainer,
+                    Size = new ScalableVector2(laneSize * scale, receptorHeight),
+                    Position = new ScalableVector2(posX,
+                        Playfield.IsOmni ? -receptorHeight / 2f : Playfield.ReceptorPositionY[i]),
                     Alignment = Alignment.TopLeft,
                     Image = Skin.NoteReceptorsUp[i],
-                    SpriteEffect = !Playfield.ScrollDirections[i].Equals(ScrollDirection.Down) && Skin.FlipNoteImagesOnUpscroll ? SpriteEffects.FlipVertically : SpriteEffects.None,
-                    Rotation = Skin.RotateReceptorsByColumn ? Skin.ReceptorRotations[i] / 180f * MathF.PI : 0
+                    SpriteEffect = Playfield.ScrollDirections[i] == ScrollDirection.Up &&
+                                   Skin.FlipNoteImagesOnUpscroll
+                        ? SpriteEffects.FlipVertically
+                        : SpriteEffects.None,
+                    Rotation = Skin.RotateReceptorsByColumn ? Skin.ReceptorRotations[i] / 180f * MathF.PI : 0,
+                    IndependentRotation = Playfield.IsOmni
                 });
+
+                if (Playfield.IsOmni)
+                    continue;
 
                 // Create the column lighting sprite.
                 var size = Skin.ColumnLightingScale * Playfield.LaneSize * ((float)Skin.ColumnLighting.Height / Skin.ColumnLighting.Width);
@@ -441,6 +530,10 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
         private void CreateHitObjectContainer()
         {
             HitObjectContainers = new Container[Screen.Map.EditorLayers.Count + 1];
+            OmniHitObjectLaneRoots = Playfield.IsOmni
+                ? new Container[HitObjectContainers.Length][]
+                : null;
+
             for (var i = 0; i <= Screen.Map.EditorLayers.Count; i++)
             {
                 HitObjectContainers[i] = new Container
@@ -449,6 +542,9 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                     Alignment = Alignment.TopCenter,
                     Parent = Playfield.ForegroundContainer
                 };
+
+                if (Playfield.IsOmni)
+                    OmniHitObjectLaneRoots[i] = CreateOmniLaneRoots(HitObjectContainers[i]);
             }
         }
 
@@ -465,12 +561,145 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
         /// <summary>
         ///     Creates the HitContainer
         /// </summary>
-        private void CreateHitContainer() => HitContainer = new Container
+        private void CreateHitContainer()
         {
-            Size = new ScalableVector2(Playfield.Width, 0, 0, 1),
-            Alignment = Alignment.TopCenter,
-            Parent = Playfield.ForegroundContainer
-        };
+            HitContainer = new Container
+            {
+                Size = new ScalableVector2(Playfield.Width, 0, 0, 1),
+                Alignment = Alignment.TopCenter,
+                Parent = Playfield.ForegroundContainer
+            };
+
+            if (Playfield.IsOmni)
+                OmniHitLaneRoots = CreateOmniLaneRoots(HitContainer);
+        }
+
+        private Container[] CreateOmniLaneRoots(Drawable parent)
+        {
+            var roots = new Container[Screen.Map.GetKeyCount(Screen.Map.HasScratchKey)];
+
+            for (var i = 0; i < roots.Length; i++)
+            {
+                roots[i] = new Container
+                {
+                    Parent = parent,
+                    Pivot = Vector2.Zero
+                };
+            }
+
+            return roots;
+        }
+
+        internal Container GetHitObjectContainer(int editorLayer, int lane)
+        {
+            if (editorLayer < 0 || editorLayer >= HitObjectContainers.Length)
+                editorLayer = 0;
+
+            if (!Playfield.IsOmni)
+                return HitObjectContainers[editorLayer];
+
+            return OmniHitObjectLaneRoots[editorLayer][lane];
+        }
+
+        internal Container GetHitContainer(int lane) =>
+            Playfield.IsOmni ? OmniHitLaneRoots[lane] : HitContainer;
+
+        internal Container GetReceptorContainer(int lane) =>
+            Playfield.IsOmni ? OmniReceptorLaneRoots[lane] : Playfield.ForegroundContainer;
+
+        internal void RefreshOmniLayout(float width, float height)
+        {
+            if (!Playfield.IsOmni || Receptors == null || Receptors.Count == 0)
+                return;
+
+            TimingLineContainer.Size = new ScalableVector2(width, height);
+            HitContainer.Size = new ScalableVector2(width, height);
+            foreach (var container in HitObjectContainers)
+                container.Size = new ScalableVector2(width, height);
+
+            const float edgeMargin = 16;
+            var footprint = Receptors.Max(x => MathF.Max(x.Width, x.Height));
+            footprint = MathF.Max(1, footprint + MathF.Max(0, Playfield.ReceptorPadding));
+
+            var laneCount = Receptors.Count;
+            var radius = OmniLaneLayout.CalculateRadius(laneCount, footprint);
+            var geometries = Playfield.OmniLaneGeometries;
+
+            var minX = float.MaxValue;
+            var maxX = float.MinValue;
+            var minY = float.MaxValue;
+            var maxY = float.MinValue;
+
+            foreach (var geometry in geometries)
+            {
+                var point = geometry.OutwardDirection * radius;
+                minX = MathF.Min(minX, point.X - footprint / 2f);
+                maxX = MathF.Max(maxX, point.X + footprint / 2f);
+                minY = MathF.Min(minY, point.Y - footprint / 2f);
+                maxY = MathF.Max(maxY, point.Y + footprint / 2f);
+            }
+
+            var requiredWidth = MathF.Max(1, maxX - minX);
+            var requiredHeight = MathF.Max(1, maxY - minY);
+            var availableWidth = MathF.Max(1, width - edgeMargin * 2);
+            var availableHeight = MathF.Max(1, height - edgeMargin * 2);
+            var layoutScale = MathF.Min(1, MathF.Min(availableWidth / requiredWidth,
+                availableHeight / requiredHeight));
+
+            var center = new Vector2(width / 2f, height / 2f);
+            for (var lane = 0; lane < geometries.Length; lane++)
+            {
+                var geometry = geometries[lane];
+                var position = center + geometry.OutwardDirection * radius * layoutScale;
+                ApplyOmniLaneTransform(OmniReceptorLaneRoots?[lane], position, geometry.RootRotation,
+                    layoutScale);
+                ApplyOmniLaneTransform(OmniHitLaneRoots?[lane], position, geometry.RootRotation,
+                    layoutScale);
+
+                if (OmniHitObjectLaneRoots != null)
+                {
+                    foreach (var layer in OmniHitObjectLaneRoots)
+                        ApplyOmniLaneTransform(layer?[lane], position, geometry.RootRotation, layoutScale);
+                }
+            }
+
+            RefreshOmniOverlayPositions(layoutScale, footprint);
+        }
+
+        private static void ApplyOmniLaneTransform(Container root, Vector2 position, float rotation, float scale)
+        {
+            if (root == null)
+                return;
+
+            root.Position = new ScalableVector2(position.X, position.Y);
+            root.Rotation = rotation;
+            root.Scale = Vector2.One * scale;
+        }
+
+        private void RefreshOmniOverlayPositions(float layoutScale, float footprint)
+        {
+            if (!Playfield.IsOmni)
+                return;
+
+            for (var lane = 0; lane < KeybindOverlays.Count; lane++)
+            {
+                var direction = Playfield.OmniLaneGeometries[lane].OutwardDirection;
+                var rootPosition = OmniReceptorLaneRoots[lane].Position;
+                var offset = direction * (footprint / 2f + 20) * layoutScale;
+                KeybindOverlays[lane].Position = new ScalableVector2(rootPosition.X.Value + offset.X,
+                    rootPosition.Y.Value + offset.Y);
+            }
+
+            if (!Skin.DisplayJudgementsInEachColumn || JudgementHitBursts == null)
+                return;
+
+            for (var lane = 0; lane < JudgementHitBursts.Count; lane++)
+            {
+                var rootPosition = OmniReceptorLaneRoots[lane].Position;
+                JudgementHitBursts[lane].Position = new ScalableVector2(rootPosition.X.Value,
+                    rootPosition.Y.Value);
+            }
+        }
 
         /// <summary>
         ///     Creates the distant overlay sprite.
@@ -567,6 +796,10 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                 Alignment = Alignment.MidCenter,
                 Position = new ScalableVector2(Skin.HitBubblesPosX, Skin.HitBubblesPosY),
             };
+
+            if (Playfield.IsOmni)
+                return;
+
             switch (Skin.HitBubblesAlignment)
             {
                 case HitBubblesAlignment.BelowStage:
@@ -613,8 +846,16 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                 {
                     Parent = Playfield.ForegroundContainer,
                     Alignment = Alignment.MidCenter,
-                    X = skin.DisplayJudgementsInEachColumn ? Receptors[lane].X - playfieldOffset : 0
+                    X = skin.DisplayJudgementsInEachColumn && !Playfield.IsOmni
+                        ? Receptors[lane].X - playfieldOffset
+                        : 0
                 };
+
+                if (Playfield.IsOmni && skin.DisplayJudgementsInEachColumn)
+                {
+                    var position = OmniReceptorLaneRoots[lane].Position;
+                    judgementHitBurst.Position = new ScalableVector2(position.X.Value, position.Y.Value);
+                }
 
                 if (skin.RotateJudgements && skin.DisplayJudgementsInEachColumn)
                     judgementHitBurst.Rotation = GameplayHitObjectKeys.GetObjectRotation(Screen.Map.Mode, lane);
@@ -634,9 +875,10 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
             {
                 var hl = new HitLighting(Playfield, i)
                 {
-                    Parent = Playfield.ForegroundContainer,
+                    Parent = GetReceptorContainer(i),
                     Visible = false,
-                    Position = new ScalableVector2(Skin.HitLightingX, Skin.HitLightingY)
+                    Position = new ScalableVector2(Skin.HitLightingX, Skin.HitLightingY),
+                    IndependentRotation = Playfield.IsOmni
                 };
 
                 var scale = Skin.HitLightingScale / 100;
@@ -644,11 +886,19 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                 hl.Image = Skin.HitLighting.First();
                 hl.Size = new ScalableVector2(hl.Image.Width * scale, hl.Image.Height * scale);
 
-                var pos = GraphicsHelper.AlignRect(Alignment.MidCenter, hl.RelativeRectangle,
-                    Receptors[i].ScreenRectangle);
+                if (Playfield.IsOmni)
+                {
+                    hl.X = Receptors[i].X + Receptors[i].Width / 2f - hl.Width / 2f;
+                    hl.Y = Receptors[i].Y + Receptors[i].Height / 2f - hl.Height / 2f;
+                }
+                else
+                {
+                    var pos = GraphicsHelper.AlignRect(Alignment.MidCenter, hl.RelativeRectangle,
+                        Receptors[i].ScreenRectangle);
 
-                hl.X = pos.X - Playfield.ForegroundContainer.ScreenRectangle.X;
-                hl.Y = pos.Y - Playfield.ForegroundContainer.ScreenRectangle.Y;
+                    hl.X = pos.X - Playfield.ForegroundContainer.ScreenRectangle.X;
+                    hl.Y = pos.Y - Playfield.ForegroundContainer.ScreenRectangle.Y;
+                }
 
                 // Set the spritebatch options for the hitlighting in this case
                 // if it's the first object.
@@ -677,11 +927,25 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
             switch (SkinManager.Skin.Keys[MapManager.Selected.Value.Mode].HealthBarKeysAlignment)
             {
                 case HealthBarKeysAlignment.LeftStage:
+                    if (Playfield.IsOmni)
+                    {
+                        HealthBar.Parent = Playfield.Container;
+                        HealthBar.Alignment = Alignment.TopLeft;
+                        break;
+                    }
+
                     HealthBar.Parent = StageLeft;
                     HealthBar.X = -5;
                     HealthBar.Y = -10;
                     break;
                 case HealthBarKeysAlignment.RightStage:
+                    if (Playfield.IsOmni)
+                    {
+                        HealthBar.Parent = Playfield.Container;
+                        HealthBar.Alignment = Alignment.TopRight;
+                        break;
+                    }
+
                     HealthBar.Parent = StageRight;
                     HealthBar.X = 5;
                     HealthBar.Y = -10;
@@ -738,7 +1002,9 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
         public void SetReceptorAndLightingActivity(int index, bool pressed)
         {
             Receptors[index].Image = pressed ? Skin.NoteReceptorsDown[index] : Skin.NoteReceptorsUp[index];
-            ColumnLightingObjects[index].Active = pressed;
+
+            if (index < ColumnLightingObjects.Count)
+                ColumnLightingObjects[index].Active = pressed;
         }
 
         /// <summary>
@@ -796,13 +1062,30 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                     input.BindingStore[i].Key.Value.GetName(), 32)
                 {
                     Parent = Playfield.ForegroundContainer,
-                    Alignment = Playfield.ScrollDirections[i] == ScrollDirection.Down ? Alignment.TopCenter : Alignment.BotCenter,
-                    Y = Receptors[i].Y + (Playfield.ScrollDirections[i] == ScrollDirection.Down ? -20 : 20),
-                    X = Receptors[i].X - Playfield.Width / 2f + Playfield.LaneSize / 2f,
+                    Alignment = Playfield.IsOmni
+                        ? Alignment.MidCenter
+                        : Playfield.ScrollDirections[i] == ScrollDirection.Down
+                            ? Alignment.TopCenter
+                            : Alignment.BotCenter,
+                    Y = Playfield.IsOmni
+                        ? OmniReceptorLaneRoots[i].Position.Y.Value
+                        : Receptors[i].Y + (Playfield.ScrollDirections[i] == ScrollDirection.Down ? -20 : 20),
+                    X = Playfield.IsOmni
+                        ? OmniReceptorLaneRoots[i].Position.X.Value
+                        : Receptors[i].X - Playfield.Width / 2f + Playfield.LaneSize / 2f,
                     Alpha = 1
                 };
 
-                if (Playfield.ScrollDirections[i] == ScrollDirection.Down)
+                KeybindOverlays.Add(keybind);
+
+                if (Playfield.IsOmni)
+                {
+                    var footprint = MathF.Max(Receptors[i].Width, Receptors[i].Height);
+                    var direction = Playfield.OmniLaneGeometries[i].OutwardDirection;
+                    keybind.X += direction.X * (footprint / 2f + 20);
+                    keybind.Y += direction.Y * (footprint / 2f + 20);
+                }
+                else if (Playfield.ScrollDirections[i] == ScrollDirection.Down)
                     keybind.Y -= keybind.Height;
                 else
                     keybind.Y += keybind.Height;
@@ -817,8 +1100,11 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
             const int time = 400;
             const Easing easing = Easing.Linear;
 
-            BgMask.Alpha = 0;
-            BgMask.FadeTo(1, Easing.Linear, time);
+            if (BgMask != null)
+            {
+                BgMask.Alpha = 0;
+                BgMask.FadeTo(1, Easing.Linear, time);
+            }
 
             Receptors.ForEach(x =>
             {
@@ -832,14 +1118,18 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                 x.FadeTo(1, Easing.Linear, time);
             });
 
-            HitObjectContainers.ForEach(container => container.Children.ForEach(x =>
+            void FadeDrawableTree(Drawable drawable)
             {
-                if (x is Sprite sprite)
+                if (drawable is Sprite sprite)
                 {
                     sprite.Alpha = 0;
                     sprite.FadeTo(1, Easing.Linear, time - 200);
                 }
-            }));
+
+                drawable.Children.ForEach(FadeDrawableTree);
+            }
+
+            HitObjectContainers.ForEach(FadeDrawableTree);
 
             HitError.Children.ForEach(x =>
             {
@@ -850,11 +1140,17 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                 }
             });
 
-            StageLeft.Alpha = 0;
-            StageLeft.FadeTo(1, Easing.Linear, time);
+            if (StageLeft != null)
+            {
+                StageLeft.Alpha = 0;
+                StageLeft.FadeTo(1, Easing.Linear, time);
+            }
 
-            StageRight.Alpha = 0;
-            StageRight.FadeTo(1, Easing.Linear, time);
+            if (StageRight != null)
+            {
+                StageRight.Alpha = 0;
+                StageRight.FadeTo(1, Easing.Linear, time);
+            }
         }
     }
 }

@@ -1323,7 +1323,14 @@ namespace Quaver.Shared.Config
 
                 ScrollSpeeds.Add(mode, ReadInt($"ScrollSpeed{keyCount}K", 150, 50, 1000, data));
 
-                ScrollDirections.Add(mode, ReadValue($"ScrollDirection{keyCount}K", ScrollDirection.Down, data));
+                var scrollDirection = ReadValue($"ScrollDirection{keyCount}K", ScrollDirection.Down, data);
+
+                // Omni requires at least two lanes. Keep hand-edited or stale 1K configs valid by
+                // normalizing them to the standard direction during configuration loading.
+                if (keyCount == 1 && scrollDirection.Value == ScrollDirection.Omni)
+                    scrollDirection.Value = ScrollDirection.Down;
+
+                ScrollDirections.Add(mode, scrollDirection);
 
                 ScratchLanesLeft.Add(mode, ReadValue($"ScratchLaneLeft{keyCount}K", true, data));
             }

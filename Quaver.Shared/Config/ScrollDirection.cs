@@ -15,6 +15,17 @@ namespace Quaver.Shared.Config
     {
         Down,
         Up,
-        Split
+        Split,
+        Omni
+    }
+
+    internal static class ScrollDirectionExtensions
+    {
+        /// <summary>
+        ///     Whether positive lane-local Y points toward the receptor. Omni lanes use downscroll math before
+        ///     their lane roots rotate that local axis into screen space.
+        /// </summary>
+        public static bool UsesDownscrollMath(this ScrollDirection direction) =>
+            direction == ScrollDirection.Down || direction == ScrollDirection.Omni;
     }
 }

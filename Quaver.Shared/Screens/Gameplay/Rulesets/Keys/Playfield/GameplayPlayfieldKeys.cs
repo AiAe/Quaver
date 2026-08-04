@@ -68,6 +68,9 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
         {
             get
             {
+                if (IsOmni)
+                    return Screen.IsSongSelectPreview ? PREVIEW_PLAYFIELD_WIDTH : WindowManager.Width;
+
                 var skin = SkinManager.Skin.Keys[Screen.Map.Mode];
                 var padding = Padding * 2 - ReceptorPadding;
                 var width = (LaneSize + ReceptorPadding) * Screen.Map.GetKeyCount(false) + padding;
@@ -186,6 +189,16 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
         public ScrollDirection[] ScrollDirections { get; private set; }
 
         /// <summary>
+        ///     Whether this playfield uses radial Omni scrolling.
+        /// </summary>
+        public bool IsOmni => ScrollDirections?.Length > 0 && ScrollDirections[0] == ScrollDirection.Omni;
+
+        /// <summary>
+        ///     Lane directions and rotations used by the Omni lane roots.
+        /// </summary>
+        internal OmniLaneGeometry[] OmniLaneGeometries { get; private set; }
+
+        /// <summary>
         ///     Ctor
         /// </summary>
         /// <param name="screen"></param>
@@ -201,6 +214,9 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
             SetLaneScrollDirections();
             SetReferencePositions();
             CreateElementContainers();
+            if (IsOmni)
+                WindowManager.VirtualScreenSizeChanged += OnVirtualScreenSizeChanged;
+
             if (!Screen.IsSongSelectPreview)
                 Container.Scale = Vector2.One * (ConfigManager.PlayfieldScale.Value / 100f);
         }
@@ -211,22 +227,28 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
         /// </summary>
         private void CreateElementContainers()
         {
+            var containerWidth = Width;
+            var containerHeight = WindowManager.Height;
+
+            if (IsOmni)
+                Container.Size = new ScalableVector2(containerWidth, containerHeight);
+
             // Create background container
             BackgroundContainer = new Container
             {
                 Parent = Container,
-                Size = new ScalableVector2(Width, WindowManager.Height),
+                Size = new ScalableVector2(containerWidth, containerHeight),
                 Alignment = Alignment.TopCenter,
-                X = SkinManager.Skin.Keys[Screen.Map.Mode].ColumnAlignment,
+                X = IsOmni ? 0 : SkinManager.Skin.Keys[Screen.Map.Mode].ColumnAlignment,
             };
 
             // Create the foreground container.
             ForegroundContainer = new Container
             {
                 Parent = Container,
-                Size = new ScalableVector2(Width, WindowManager.Height),
+                Size = new ScalableVector2(containerWidth, containerHeight),
                 Alignment = Alignment.TopCenter,
-                X = SkinManager.Skin.Keys[Screen.Map.Mode].ColumnAlignment
+                X = IsOmni ? 0 : SkinManager.Skin.Keys[Screen.Map.Mode].ColumnAlignment
             };
 
             PlayfieldMask = new Sprite
@@ -235,7 +257,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                 Image = UserInterface.PlayfieldMask,
                 Alignment = Alignment.MidCenter,
                 Size = new ScalableVector2(WindowManager.Width * 4, WindowManager.Height * 4),
-                Visible = ConfigManager.PlayfieldScale.Value < 100 && !Screen.IsSongSelectPreview,
+                Visible = !IsOmni && ConfigManager.PlayfieldScale.Value < 100 && !Screen.IsSongSelectPreview,
                 SpriteBatchOptions = new SpriteBatchOptions
                 {
                     SamplerState = new SamplerState
@@ -259,6 +281,19 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
             var keys = Ruleset.Screen.Map?.GetKeyCount() ?? 4;
 
             var direction = ConfigManager.ScrollDirections[Ruleset.Map.Mode].Value;
+
+            if (direction == ScrollDirection.Omni)
+            {
+                if (keys < 2)
+                {
+                    ScrollDirections = Enumerable.Repeat(ScrollDirection.Down, keys).ToArray();
+                    return;
+                }
+
+                ScrollDirections = Enumerable.Repeat(ScrollDirection.Omni, keys).ToArray();
+                OmniLaneGeometries = OmniLaneLayout.Create(keys);
+                return;
+            }
 
             // Case: Config = Split Scroll
             if (direction.Equals(ScrollDirection.Split))
@@ -367,6 +402,28 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                         ColumnLightingPositionY[i] = ReceptorPositionY[i] + receptorOffset + skin.ColumnLightingOffsetY;
                         TimingLinePositionY[i] = HitPositionY[(int)HitObjectType.Normal, i];
                         break;
+                    case ScrollDirection.Omni:
+                        // Omni lanes use downscroll math in their own rotated coordinate systems. The lane root is
+                        // anchored at the receptor center, so all of these values remain local to that root.
+                        ReceptorPositionY[i] = -receptorOffset / 2f;
+                        ColumnLightingPositionY[i] = 0;
+
+                        HitPositionY[(int)HitObjectType.Normal, i] =
+                            ReceptorPositionY[i] + skin.HitPosOffsetY - hitObOffset;
+                        HoldHitPositionY[(int)HitObjectType.Normal, i] =
+                            ReceptorPositionY[i] + skin.HitPosOffsetY - holdHitObOffset;
+                        HoldEndHitPositionY[(int)HitObjectType.Normal, i] =
+                            ReceptorPositionY[i] + skin.HitPosOffsetY - holdEndOffset;
+
+                        HitPositionY[(int)HitObjectType.Mine, i] =
+                            ReceptorPositionY[i] + skin.HitPosOffsetY - mineOffset;
+                        HoldHitPositionY[(int)HitObjectType.Mine, i] =
+                            ReceptorPositionY[i] + skin.HitPosOffsetY - mineStartOffset;
+                        HoldEndHitPositionY[(int)HitObjectType.Mine, i] =
+                            ReceptorPositionY[i] + skin.HitPosOffsetY - mineEndOffset;
+
+                        TimingLinePositionY[i] = ReceptorPositionY[i] + skin.HitPosOffsetY;
+                        break;
                     default:
                         throw new Exception($"Scroll Direction in current lane index {i} does not exist.");
                 }
@@ -395,10 +452,38 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
         /// <param name="gameTime"></param>
         public void Draw(GameTime gameTime) => Container.Draw(gameTime);
 
+        /// <summary>
+        ///     Updates all Omni lane roots for a viewport or embedded preview size.
+        /// </summary>
+        internal void RefreshOmniLayout(float width, float height)
+        {
+            if (!IsOmni || width <= 0 || height <= 0)
+                return;
+
+            Container.Size = new ScalableVector2(width, height);
+            BackgroundContainer.Size = new ScalableVector2(width, height);
+            ForegroundContainer.Size = new ScalableVector2(width, height);
+            Stage?.RefreshOmniLayout(width, height);
+        }
+
+        private void OnVirtualScreenSizeChanged(object sender, WindowVirtualScreenSizeChangedEventArgs e)
+        {
+            if (Screen.IsSongSelectPreview)
+                RefreshOmniLayout(BackgroundContainer.Width, BackgroundContainer.Height);
+            else
+                RefreshOmniLayout(e.Size.X, e.Size.Y);
+        }
+
         /// <inheritdoc />
         /// <summary>
         /// </summary>
-        public void Destroy() => Container?.Destroy();
+        public void Destroy()
+        {
+            if (IsOmni)
+                WindowManager.VirtualScreenSizeChanged -= OnVirtualScreenSizeChanged;
+
+            Container?.Destroy();
+        }
 
         /// <inheritdoc />
         /// <summary>

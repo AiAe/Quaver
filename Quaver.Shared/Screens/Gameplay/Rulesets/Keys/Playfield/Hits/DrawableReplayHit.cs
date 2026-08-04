@@ -123,6 +123,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield.Hits
             LineHitPosition = playfield.TimingLinePositionY[lane];
 
             var laneX = playfield.Stage.Receptors[lane].X;
+            var hitContainer = playfield.Stage.GetHitContainer(lane);
             
             LineToPerfect = new Sprite
             {
@@ -131,7 +132,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield.Hits
                 Size = new ScalableVector2(2, 0),
                 Alpha = Manager.ShowHits ? 1 : 0,
                 Visible = false,
-                Parent = playfield.Stage.HitContainer,
+                Parent = hitContainer,
             };
             
             Indicator = new Sprite
@@ -141,7 +142,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield.Hits
                 Size = new ScalableVector2(playfield.LaneSize * 0.75f, 2),
                 Alpha = Manager.ShowHits ? 1 : 0,
                 Visible = false,
-                Parent = playfield.Stage.HitContainer,
+                Parent = hitContainer,
             };
         }
 

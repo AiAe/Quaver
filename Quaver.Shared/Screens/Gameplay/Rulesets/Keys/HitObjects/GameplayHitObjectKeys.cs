@@ -173,7 +173,8 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.HitObjects
             {
                 Alignment = Alignment.TopLeft,
                 Position = new ScalableVector2(posX, 0),
-                SpriteEffect = flipNoteBody ? SpriteEffects.FlipVertically : SpriteEffects.None
+                SpriteEffect = flipNoteBody ? SpriteEffects.FlipVertically : SpriteEffects.None,
+                IndependentRotation = playfield.IsOmni
             };
 
             // Handle rotating the objects automatically
@@ -308,11 +309,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.HitObjects
         private Container GetHitObjectContainer(GameplayPlayfieldKeys playfield)
         {
             var editorLayer = Info.HitObjectInfo.EditorLayer;
-
-            if (editorLayer < 0 || editorLayer >= playfield.Stage.HitObjectContainers.Length)
-                return playfield.Stage.HitObjectContainers[0];
-
-            return playfield.Stage.HitObjectContainers[editorLayer];
+            return playfield.Stage.GetHitObjectContainer(editorLayer, Info.Lane - 1);
         }
 
         /// <summary>
@@ -424,7 +421,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.HitObjects
         /// <returns>Adjusted position after applying Percy amount.</returns>
         private float PercyPosition(double position)
         {
-            if (ScrollDirection.Equals(ScrollDirection.Down))
+            if (ScrollDirection.UsesDownscrollMath())
                 return (float)(position + PercyReduction);
             return (float)(position - PercyReduction);
         }
@@ -471,7 +468,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.HitObjects
             var longNoteBodyHeight = PercyHeight(currentLongNoteBodySize);
             LongNoteBodySprite.Height = longNoteBodyHeight;
 
-            if (ScrollDirection.Equals(ScrollDirection.Down))
+            if (ScrollDirection.UsesDownscrollMath())
                 LongNoteBodySprite.Y = earliestHeldPosition + LongNoteBodyOffset - longNoteBodyHeight;
             else
                 LongNoteBodySprite.Y = earliestHeldPosition + LongNoteBodyOffset;

@@ -96,11 +96,23 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
 
             Size = new ScalableVector2(Image.Width * scale, Image.Height * scale);
 
-            var relativeRect = new RectangleF(0, 0, RelativeRectangle.Width, RelativeRectangle.Height);
-            var pos = GraphicsHelper.AlignRect(Alignment.MidCenter, relativeRect, Playfield.Stage.Receptors[ColumnIndex].ScreenRectangle);
+            if (Playfield.IsOmni)
+            {
+                var receptor = Playfield.Stage.Receptors[ColumnIndex];
+                Position = new ScalableVector2(
+                    receptor.X + receptor.Width / 2f - Width / 2f + skin.HitLightingX * previewScale,
+                    receptor.Y + receptor.Height / 2f - Height / 2f + skin.HitLightingY * previewScale);
+            }
+            else
+            {
+                var relativeRect = new RectangleF(0, 0, RelativeRectangle.Width, RelativeRectangle.Height);
+                var pos = GraphicsHelper.AlignRect(Alignment.MidCenter, relativeRect,
+                    Playfield.Stage.Receptors[ColumnIndex].ScreenRectangle);
 
-            Position = new ScalableVector2(pos.X - Playfield.ForegroundContainer.ScreenRectangle.X + (skin.HitLightingX * previewScale),
-                pos.Y - Playfield.ForegroundContainer.ScreenRectangle.Y + (skin.HitLightingY * previewScale));
+                Position = new ScalableVector2(
+                    pos.X - Playfield.ForegroundContainer.ScreenRectangle.X + skin.HitLightingX * previewScale,
+                    pos.Y - Playfield.ForegroundContainer.ScreenRectangle.Y + skin.HitLightingY * previewScale);
+            }
 
             // Rotation
             var rotate = IsHoldingLongNote ? skin.HoldLightingColumnRotation : skin.HitLightingColumnRotation;

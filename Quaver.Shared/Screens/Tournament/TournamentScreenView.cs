@@ -154,25 +154,36 @@ namespace Quaver.Shared.Screens.Tournament
                 var screen = TournamentScreen.GameplayScreens[i];
                 var playfield = (GameplayPlayfieldKeys)screen.Ruleset.Playfield;
 
-                playfield.Container.Width = playfield.Width + playfield.Stage.HealthBar.Width;
-
                 var paddingLeft = SkinManager.Skin.Keys[screen.Map.Mode].CoopPlayfieldPadding;
+
+                if (playfield.IsOmni)
+                {
+                    playfield.Container.Width = WindowManager.Width / 2f - paddingLeft * 2;
+                    playfield.RefreshOmniLayout(playfield.Container.Width, WindowManager.Height);
+                }
+                else
+                {
+                    playfield.Container.Width = playfield.Width + playfield.Stage.HealthBar.Width;
+                }
 
                 if (i + 1 <= TournamentScreen.GameplayScreens.Count / 2f)
                 {
                     playfield.Container.Alignment = Alignment.TopLeft;
                     playfield.Container.X = paddingLeft;
 
-                    var healthBar = playfield.Stage.HealthBar;
-                    healthBar.Parent = playfield.Stage.StageLeft;
-                    healthBar.X = -healthBar.Width;
-                    healthBar.SpriteEffect = SpriteEffects.FlipHorizontally;
-                    healthBar.ForegroundBar.SpriteEffect = SpriteEffects.FlipHorizontally;
+                    if (!playfield.IsOmni)
+                    {
+                        var healthBar = playfield.Stage.HealthBar;
+                        healthBar.Parent = playfield.Stage.StageLeft;
+                        healthBar.X = -healthBar.Width;
+                        healthBar.SpriteEffect = SpriteEffects.FlipHorizontally;
+                        healthBar.ForegroundBar.SpriteEffect = SpriteEffects.FlipHorizontally;
 
-                    var hitBubbles = playfield.Stage.HitBubbles;
-                    hitBubbles.Parent = playfield.Stage.StageRight;
-                    hitBubbles.Alignment = Alignment.MidRight;
-                    hitBubbles.X = -hitBubbles.X + hitBubbles.Width / 2;
+                        var hitBubbles = playfield.Stage.HitBubbles;
+                        hitBubbles.Parent = playfield.Stage.StageRight;
+                        hitBubbles.Alignment = Alignment.MidRight;
+                        hitBubbles.X = -hitBubbles.X + hitBubbles.Width / 2;
+                    }
                 }
                 else
                 {
@@ -264,7 +275,17 @@ namespace Quaver.Shared.Screens.Tournament
             for (var i = 0; i < screensCount; i++)
             {
                 var playfield = (GameplayPlayfieldKeys)TournamentScreen.GameplayScreens[i].Ruleset.Playfield;
-                playfield.Container.Width = playfield.Width + playfield.Stage.HealthBar.Width;
+
+                if (playfield.IsOmni)
+                {
+                    playfield.Container.Width = WindowManager.Width;
+                    playfield.RefreshOmniLayout(playfield.Container.Width, WindowManager.Height);
+                }
+                else
+                {
+                    playfield.Container.Width = playfield.Width + playfield.Stage.HealthBar.Width;
+                }
+
                 playfield.Container.Pivot = Vector2.Zero;
 
                 // For debug purpose, a red border around the playfield 
@@ -287,6 +308,9 @@ namespace Quaver.Shared.Screens.Tournament
 
             foreach (var screen in TournamentScreen.GameplayScreens)
             {
+                if (((GameplayPlayfieldKeys)screen.Ruleset.Playfield).IsOmni)
+                    continue;
+
                 var view = (GameplayScreenView)screen.View;
 
                 view.ScoreDisplay.Visible = false;
@@ -324,6 +348,9 @@ namespace Quaver.Shared.Screens.Tournament
             {
                 var screen = TournamentScreen.GameplayScreens[i];
 
+                if (((GameplayPlayfieldKeys)screen.Ruleset.Playfield).IsOmni)
+                    continue;
+
                 var username = new SpriteTextPlus(FontManager.GetWobbleFont(Fonts.InterSemiBold),
                     screen.LoadedReplay?.PlayerName ?? $"Player {i + 1}", 24)
                 {
@@ -341,6 +368,9 @@ namespace Quaver.Shared.Screens.Tournament
         private void CreateOverlay()
         {
             TournamentPlayers = new List<TournamentPlayer>();
+
+            if (((GameplayPlayfieldKeys)TournamentScreen.MainGameplayScreen.Ruleset.Playfield).IsOmni)
+                return;
 
             if (TournamentScreen.GameplayScreens.Count > 2 || !ConfigManager.Display1v1TournamentOverlay.Value)
                 return;
@@ -499,6 +529,9 @@ namespace Quaver.Shared.Screens.Tournament
         /// <param name="gameTime"></param>
         private void UpdateSkipDisplay(GameTime gameTime)
         {
+            if (((GameplayPlayfieldKeys)TournamentScreen.MainGameplayScreen.Ruleset.Playfield).IsOmni)
+                return;
+
             if (TournamentScreen.MainGameplayScreen.Type != TournamentScreenType.Coop
                 && TournamentScreen.MainGameplayScreen.Type != TournamentScreenType.Replay)
             {
@@ -514,6 +547,9 @@ namespace Quaver.Shared.Screens.Tournament
         /// <param name="gameTime"></param>
         private void DrawSkipDisplay(GameTime gameTime)
         {
+            if (((GameplayPlayfieldKeys)TournamentScreen.MainGameplayScreen.Ruleset.Playfield).IsOmni)
+                return;
+
             if (TournamentScreen.MainGameplayScreen.Type != TournamentScreenType.Coop
                 && TournamentScreen.MainGameplayScreen.Type != TournamentScreenType.Replay)
             {
@@ -528,7 +564,8 @@ namespace Quaver.Shared.Screens.Tournament
         /// <param name="gameTime"></param>
         private void UpdateProgressBar(GameTime gameTime)
         {
-            if (!ConfigManager.DisplaySongTimeProgress.Value)
+            if (!ConfigManager.DisplaySongTimeProgress.Value ||
+                ((GameplayPlayfieldKeys)TournamentScreen.MainGameplayScreen.Ruleset.Playfield).IsOmni)
                 return;
 
             var view = (GameplayScreenView)TournamentScreen.MainGameplayScreen.View;
@@ -540,7 +577,8 @@ namespace Quaver.Shared.Screens.Tournament
         /// <param name="gameTime"></param>
         private void DrawProgressBar(GameTime gameTime)
         {
-            if (!ConfigManager.DisplaySongTimeProgress.Value)
+            if (!ConfigManager.DisplaySongTimeProgress.Value ||
+                ((GameplayPlayfieldKeys)TournamentScreen.MainGameplayScreen.Ruleset.Playfield).IsOmni)
                 return;
 
             var view = (GameplayScreenView)TournamentScreen.MainGameplayScreen.View;
