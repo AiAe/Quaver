@@ -79,7 +79,7 @@ namespace Quaver.Shared.Screens.V2.Downloading
 
         [ConfigEditable]
         [SkinColor]
-        public string BackgroundColor { get; set; } = "#898989FF";
+        public string BackgroundColor { get; set; } = "#0F2C44FF";
     }
 
     public sealed class SkinV2DownloadingFieldConfig
@@ -119,7 +119,7 @@ namespace Quaver.Shared.Screens.V2.Downloading
 
         [ConfigEditable]
         [SkinColor]
-        public string BackgroundColor { get; set; } = "#555555FF";
+        public string BackgroundColor { get; set; } = "#061019";
 
         [ConfigEditable]
         [SkinColor]
@@ -169,6 +169,9 @@ namespace Quaver.Shared.Screens.V2.Downloading
         [Range(1, 8192)]
         public float IconSize { get; set; } = 17;
 
+        [Range(1, 8192)]
+        public float ExpandIconSize { get; set; } = 22;
+
         [Range(0, 2048)]
         public float HorizontalPadding { get; set; } = SkinV2Spacing.SpacingXs;
 
@@ -183,11 +186,11 @@ namespace Quaver.Shared.Screens.V2.Downloading
 
         [ConfigEditable]
         [SkinColor]
-        public string BackgroundColor { get; set; } = "#555555FF";
+        public string BackgroundColor { get; set; } = "#061019";
 
         [ConfigEditable]
         [SkinColor]
-        public string ActiveColor { get; set; } = "#A7A7A7FF";
+        public string ActiveColor { get; set; } = "#256EAA";
 
         [ConfigEditable]
         [SkinColor]
@@ -217,15 +220,15 @@ namespace Quaver.Shared.Screens.V2.Downloading
 
         [ConfigEditable]
         [SkinColor]
-        public string MenuColor { get; set; } = "#454545FF";
+        public string MenuColor { get; set; } = "#061019";
 
         [ConfigEditable]
         [SkinColor]
-        public string ItemColor { get; set; } = "#555555FF";
+        public string ItemColor { get; set; } = "#0F2C44FF";
 
         [ConfigEditable]
         [SkinColor]
-        public string SelectedItemColor { get; set; } = "#737373FF";
+        public string SelectedItemColor { get; set; } = "#256EAA";
     }
 
     public sealed class SkinV2DownloadingRangeConfig
@@ -250,14 +253,14 @@ namespace Quaver.Shared.Screens.V2.Downloading
 
         [ConfigEditable]
         [SkinColor]
-        public string TrackColor { get; set; } = "#B7B7B7FF";
+        public string TrackColor { get; set; } = "#061019";
 
         [ConfigEditable]
         [SkinColor]
-        public string SelectedTrackColor { get; set; } = "#D0D0D0FF";
+        public string SelectedTrackColor { get; set; } = "#061019";
 
         [ConfigEditable]
         [SkinColor]
-        public string ThumbColor { get; set; } = "#FFFFFFFF";
+        public string ThumbColor { get; set; } = "#256EAA";
     }
 }

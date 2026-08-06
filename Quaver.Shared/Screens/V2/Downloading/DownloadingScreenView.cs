@@ -158,7 +158,19 @@ namespace Quaver.Shared.Screens.V2.Downloading
                     "Screens.Downloading.Background", Background),
                 new SkinEditorTarget("downloading-search",
                     LocalizationManager.Get("SkinEditor_Component_SearchArea"),
-                    "Screens.Downloading.SearchArea", SearchPanel)
+                    "Screens.Downloading.SearchArea", SearchPanel),
+                new SkinEditorTarget("downloading-search-fields",
+                    LocalizationManager.Get("SkinEditor_Component_SearchFields"),
+                    "Screens.Downloading.Field", SearchPanel),
+                new SkinEditorTarget("downloading-search-buttons",
+                    LocalizationManager.Get("SkinEditor_Component_SearchButtons"),
+                    "Screens.Downloading.Button", SearchPanel),
+                new SkinEditorTarget("downloading-search-dropdowns",
+                    LocalizationManager.Get("SkinEditor_Component_SearchDropdowns"),
+                    "Screens.Downloading.Dropdown", SearchPanel),
+                new SkinEditorTarget("downloading-search-sliders",
+                    LocalizationManager.Get("SkinEditor_Component_SearchSliders"),
+                    "Screens.Downloading.Range", SearchPanel)
             };
 
             LastWindowWidth = -1;
@@ -166,10 +178,12 @@ namespace Quaver.Shared.Screens.V2.Downloading
             UpdateResponsiveLayout(true);
         }
 
-        private static void ConfigureNavigation(ScreenNavigation navigation)
+        private void ConfigureNavigation(ScreenNavigation navigation)
         {
+            var screen = (DownloadingScreen) Screen;
             navigation.ShowApplicationTopBar(QuaverScreenType.Download);
-            navigation.ShowDefaultFooter();
+            navigation.ShowDownloadingFooter(screen.ExitToPreviousScreen,
+                screen.ShowRecommendedDifficultyDialog);
         }
 
         private void AddNavigationTargets(ScreenNavigation navigation) =>

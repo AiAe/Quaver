@@ -56,11 +56,18 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
 
         private void ApplySize()
         {
+            Button.Size = Size;
+            ContentContainer.Size = Size;
+
+            // FlexContainer can briefly report an empty rectangle while the window is
+            // being resized. Avoid generating a rounded texture for that transient state.
+            if (Width <= 0 || Height <= 0 || float.IsNaN(Width) || float.IsNaN(Height) ||
+                float.IsInfinity(Width) || float.IsInfinity(Height))
+                return;
+
             var texture = RoundedRectTextureCache.Get(Width, Height, Config.CornerRadius);
             if (Image != texture)
                 Image = texture;
-            Button.Size = Size;
-            ContentContainer.Size = Size;
         }
     }
 
@@ -360,6 +367,7 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
         {
             base.Update(gameTime);
             LayoutTriggerContent();
+            UpdateMenuPosition();
 
             if (Menu != null && MouseManager.IsUniqueClick(MouseButton.Left) &&
                 !Contains(Trigger.ScreenRectangle, MouseManager.CurrentState.Position) &&
@@ -370,6 +378,7 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
         public override void Destroy()
         {
             Value.ValueChanged -= OnValueChanged;
+            CloseMenu();
             base.Destroy();
         }
 
@@ -396,16 +405,17 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
             var padding = DropdownConfig.MenuPadding;
             var itemHeight = DropdownConfig.ItemHeight;
             var spacing = DropdownConfig.ItemSpacing;
+            var menuParent = Parent?.Parent ?? this;
             Menu = new Sprite
             {
-                Parent = this,
-                Position = new ScalableVector2(0, Height + DropdownConfig.MenuGap),
+                Parent = menuParent,
                 Size = new ScalableVector2(Width,
                     padding * 2 + Options.Count * itemHeight +
                     Math.Max(0, Options.Count - 1) * spacing),
                 Tint = SkinV2Color.Parse(DropdownConfig.MenuColor),
                 DrawOrder = 100
             };
+            UpdateMenuPosition();
             Menu.Image = RoundedRectTextureCache.Get(Menu.Width, Menu.Height,
                 DropdownConfig.CornerRadius);
 
@@ -438,6 +448,23 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
         {
             Menu?.Destroy();
             Menu = null;
+        }
+
+        private void UpdateMenuPosition()
+        {
+            if (Menu == null)
+                return;
+
+            var parent = Menu.Parent;
+            if (parent == null || parent == this)
+            {
+                Menu.Position = new ScalableVector2(0, Height + DropdownConfig.MenuGap);
+                return;
+            }
+
+            Menu.Position = new ScalableVector2(
+                ScreenRectangle.Left - parent.ScreenRectangle.Left,
+                ScreenRectangle.Bottom - parent.ScreenRectangle.Top + DropdownConfig.MenuGap);
         }
 
         private void OnValueChanged(object sender, BindableValueChangedEventArgs<T> args)
