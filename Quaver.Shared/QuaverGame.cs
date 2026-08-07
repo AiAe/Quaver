@@ -446,6 +446,7 @@ namespace Quaver.Shared
         {
             base.LoadContent();
             GlobalIcons.Load();
+            CapsuleIcons.Load();
             Flags.Load();
             GlobalGameplayAssets.Load();
             UserGroupAssets.Load();
@@ -476,6 +477,7 @@ namespace Quaver.Shared
             DiscordHelper.Shutdown();
             TooltipManager.TargetEligibilityFilter = null;
             GlobalIcons.Dispose();
+            CapsuleIcons.Dispose();
             Flags.Dispose();
             GlobalGameplayAssets.Dispose();
             UserGroupAssets.Dispose();
@@ -1223,6 +1225,12 @@ namespace Quaver.Shared
             else
                 WindowManager.ChangeVirtualScreenSize(new Vector2(WindowManager.BaseResolution.X, WindowManager.BaseResolution.X / ratio));
 
+            // The V2 Download screen resizes its layout in place. Recreating it for every native
+            // window-size event can queue repeated screen loads while the user is dragging the window.
+            // ToDO Probably could be removed once we merge the window resize PR
+            if (CurrentScreen is Screens.V2.Downloading.DownloadingScreen)
+                return;
+
             if (CurrentScreen == null)
                 return;
 
@@ -1313,6 +1321,7 @@ namespace Quaver.Shared
         private static void InitializeHotReloadAssembly(Assembly assembly)
         {
             InvokeHotReloadAssetMethod(assembly, typeof(GlobalIcons), nameof(GlobalIcons.Load));
+            InvokeHotReloadAssetMethod(assembly, typeof(CapsuleIcons), nameof(CapsuleIcons.Load));
             InvokeHotReloadAssetMethod(assembly, typeof(Flags), nameof(Flags.Load));
             InvokeHotReloadAssetMethod(assembly, typeof(GlobalGameplayAssets), nameof(GlobalGameplayAssets.Load));
             InvokeHotReloadAssetMethod(assembly, typeof(UserGroupAssets), nameof(UserGroupAssets.Load));
@@ -1321,6 +1330,7 @@ namespace Quaver.Shared
         private static void DisposeHotReloadAssembly(Assembly assembly)
         {
             InvokeHotReloadAssetMethod(assembly, typeof(GlobalIcons), nameof(GlobalIcons.Dispose));
+            InvokeHotReloadAssetMethod(assembly, typeof(CapsuleIcons), nameof(CapsuleIcons.Dispose));
             InvokeHotReloadAssetMethod(assembly, typeof(Flags), nameof(Flags.Dispose));
             InvokeHotReloadAssetMethod(assembly, typeof(GlobalGameplayAssets), nameof(GlobalGameplayAssets.Dispose));
             InvokeHotReloadAssetMethod(assembly, typeof(UserGroupAssets), nameof(UserGroupAssets.Dispose));
