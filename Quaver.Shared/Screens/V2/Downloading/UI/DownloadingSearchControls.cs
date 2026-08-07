@@ -122,6 +122,8 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
 
     internal sealed class DownloadingNumericTextbox : DownloadingSearchTextbox
     {
+        private const string InfinitySymbol = "∞";
+
         private static readonly Regex NumericCharacters =
             new Regex(@"^(?!.*\..*\.)[.\d]*$", RegexOptions.Compiled);
 
@@ -131,25 +133,51 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
 
         private string Format { get; }
 
+        private Func<float, bool> ShowInfinity { get; }
+
         private bool HasValue { get; set; }
+
+        private bool WasFocused { get; set; }
 
         public DownloadingNumericTextbox(BindableFloat value, string placeholder,
             WobbleFontStore font, SkinV2DownloadingFieldConfig config, float width,
             string format = "0.##", bool showInitialValue = false,
-            Func<float, float> normalize = null)
+            Func<float, float> normalize = null, Func<float, bool> showInfinity = null)
             : base(new ScalableVector2(width, config.Height), font, config,
-                showInitialValue ? value.Value.ToString(format, CultureInfo.InvariantCulture) : string.Empty,
+                showInitialValue ? FormatValue(value.Value, format, showInfinity) : string.Empty,
                 placeholder)
         {
             Value = value;
             Normalize = normalize;
             Format = format;
+            ShowInfinity = showInfinity;
             HasValue = showInitialValue;
             AllowedCharacters = NumericCharacters;
             MaxCharacters = 8;
 
             OnStoppedTyping += OnTextChanged;
             Value.ValueChanged += OnBoundValueChanged;
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            // Infinity is a display-only value. Clear it once the user focuses the field so
+            // normal numeric input can replace it without requiring an explicit selection.
+            if (Focused && !WasFocused && ShowInfinity?.Invoke(Value.Value) == true &&
+                RawText == InfinitySymbol)
+            {
+                RawText = string.Empty;
+                HasValue = false;
+            }
+            else if (!Focused && WasFocused && ShowInfinity != null &&
+                     (string.IsNullOrEmpty(RawText) || RawText == "."))
+            {
+                HasValue = true;
+                SetFormattedText(Value.Value);
+            }
+
+            WasFocused = Focused;
+            base.Update(gameTime);
         }
 
         public override void Destroy()
@@ -172,16 +200,21 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
 
         private void OnBoundValueChanged(object sender, BindableValueChangedEventArgs<float> args)
         {
-            if (HasValue)
+            if (HasValue || ShowInfinity != null)
                 SetFormattedText(args.Value);
         }
 
         private void SetFormattedText(float value)
         {
-            var formatted = value.ToString(Format, CultureInfo.InvariantCulture);
+            var formatted = FormatValue(value, Format, ShowInfinity);
             if (RawText != formatted)
                 RawText = formatted;
         }
+
+        private static string FormatValue(float value, string format, Func<float, bool> showInfinity) =>
+            showInfinity?.Invoke(value) == true
+                ? InfinitySymbol
+                : value.ToString(format, CultureInfo.InvariantCulture);
     }
 
     internal sealed class DownloadingRangeSlider : Container

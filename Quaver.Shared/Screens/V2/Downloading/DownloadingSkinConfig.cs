@@ -37,6 +37,10 @@ namespace Quaver.Shared.Screens.V2.Downloading
         [Required]
         public SkinV2DownloadingRangeConfig Range { get; set; } =
             new SkinV2DownloadingRangeConfig();
+
+        [Required]
+        public SkinV2DownloadingMapsetConfig Mapset { get; set; } =
+            new SkinV2DownloadingMapsetConfig();
     }
 
     public sealed class SkinV2DownloadingLayoutConfig
@@ -46,6 +50,9 @@ namespace Quaver.Shared.Screens.V2.Downloading
 
         [Range(0, 2048)]
         public float TopPadding { get; set; } = SkinV2Spacing.Spacing2Xs;
+
+        [Range(0, 2048)]
+        public float ContentGap { get; set; } = SkinV2Spacing.SpacingXs;
 
         [Range(1, 8192)]
         public float ReflowBreakpoint { get; set; } = 1120;
@@ -262,5 +269,111 @@ namespace Quaver.Shared.Screens.V2.Downloading
         [ConfigEditable]
         [SkinColor]
         public string ThumbColor { get; set; } = "#256EAA";
+    }
+
+    public sealed class SkinV2DownloadingMapsetConfig
+    {
+        [Range(1, 8192)]
+        public float Height { get; set; } = 205;
+
+        [Range(1, 8192)]
+        public float BannerHeight { get; set; } = 145;
+
+        [Range(0, 2048)]
+        public float Padding { get; set; } = SkinV2Spacing.Spacing2Xs;
+
+        [Range(0, 2048)]
+        public float BannerPadding { get; set; } = SkinV2Spacing.Spacing2Xs;
+
+        [Range(0, 2048)]
+        public float ContentGap { get; set; } = SkinV2Spacing.Spacing2Xs;
+
+        [Range(1, 12)]
+        public int GridColumns { get; set; } = 3;
+
+        [Range(0, 2048)]
+        public float GridColumnGap { get; set; } = SkinV2Spacing.Spacing2Xs;
+
+        [Range(0, 2048)]
+        public float GridRowGap { get; set; } = SkinV2Spacing.Spacing2Xs;
+
+        [Range(1, 8192)]
+        public int ScrollSpeed { get; set; } = 320;
+
+        [Range(1, 8192)]
+        public float ScrollbarWidth { get; set; } = 6;
+
+        [Range(0, 2048)]
+        public float PillGap { get; set; } = SkinV2Spacing.Spacing2Xs;
+
+        [Range(1, 8192)]
+        public float PillHeight { get; set; } = 30;
+
+        [Range(1, 8192)]
+        public float DownloadButtonSize { get; set; } = 30;
+
+        [Range(1, 8192)]
+        public float IconSize { get; set; } = 18;
+
+        [Range(1, 8192)]
+        public float StatisticsIconSize { get; set; } = 18;
+
+        [Range(1, 8192)]
+        public float DownloadIconSize { get; set; } = 16;
+
+        [Range(0, 2048)]
+        public float PillHorizontalPadding { get; set; } = SkinV2Spacing.SpacingXs;
+
+        [Range(0, 4096)]
+        public float CornerRadius { get; set; } = SkinV2BorderRadiusConfig.Normal;
+
+        [Range(0, 4096)]
+        public float PillCornerRadius { get; set; } = 15;
+
+        [SkinFont]
+        public string TitleFont { get; set; } = SkinV2FontWeightsConfig.Bold;
+
+        [SkinFont]
+        public string MetadataFont { get; set; } = SkinV2FontWeightsConfig.SemiBold;
+
+        [SkinFont]
+        public string PillFont { get; set; } = SkinV2FontWeightsConfig.SemiBold;
+
+        [Range(1, 256)]
+        public int TitleFontSize { get; set; } = SkinV2FontSizesConfig.TextXl;
+
+        [Range(1, 256)]
+        public int MetadataFontSize { get; set; } = SkinV2FontSizesConfig.TextBase;
+
+        [Range(1, 256)]
+        public int PillFontSize { get; set; } = SkinV2FontSizesConfig.TextSm;
+
+        [ConfigEditable]
+        [SkinColor]
+        public string CardColor { get; set; } = "#1A2028FF";
+
+        [ConfigEditable]
+        [SkinColor]
+        public string BannerOverlayColor { get; set; } = "#00000099";
+
+        [ConfigEditable]
+        [SkinColor]
+        public string PillColor { get; set; } = "#FFFFFF45";
+
+        [ConfigEditable]
+        [SkinColor]
+        public string ButtonColor { get; set; } = "#256EAA";
+
+        [ConfigEditable]
+        [SkinColor]
+        public string PrimaryTextColor { get; set; } = "#FFFFFFFF";
+
+        [ConfigEditable]
+        [SkinColor]
+        public string SecondaryTextColor { get; set; } = "#D2D8E0FF";
+
+        [ConfigEditable]
+        [SkinColor]
+        public string ScrollbarColor { get; set; } = "#FFFFFF99";
     }
 }

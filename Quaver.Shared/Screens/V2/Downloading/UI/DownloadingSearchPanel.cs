@@ -255,7 +255,8 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
             };
             var minimum = new DownloadingNumericTextbox(State.MinimumDifficulty,
                 string.Empty, FieldFont, Config.Field, Config.Field.NumericWidth,
-                "00.00", true, value => Math.Min(value, State.MaximumDifficulty.Value))
+                "00.00", true, value => Math.Min(value, State.MaximumDifficulty.Value),
+                value => value <= State.MinimumDifficulty.MinValue)
             {
                 Parent = group
             };
@@ -270,7 +271,8 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
 
             var maximum = new DownloadingNumericTextbox(State.MaximumDifficulty,
                 string.Empty, FieldFont, Config.Field, Config.Field.NumericWidth,
-                "00.00", true, value => Math.Max(value, State.MinimumDifficulty.Value))
+                "00.00", true, value => Math.Max(value, State.MinimumDifficulty.Value),
+                value => value >= State.MaximumDifficulty.MaxValue)
             {
                 Parent = group
             };
@@ -596,17 +598,20 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
                 ExpansionProgress = target;
 
             if (ExtraRow != null)
-                ExtraRow.Visible = ExpansionProgress > 0.001f;
+                ExtraRow.Visible = State.MapsetsExpanded.Value && ExpansionProgress > 0.001f;
             UpdatePanelHeight();
         }
 
         private void UpdatePanelHeight()
         {
             var compact = GetCompactHeight();
-            var targetHeight = State.ActiveTab.Value == DownloadSearchTab.Playlists
+            // Keep the result grid out of the expansion animation. Interpolating this height
+            // moves every mapset card every frame, which recursively recalculates all of the
+            // card descendants while the filters are opening or closing.
+            var targetHeight = State.ActiveTab.Value == DownloadSearchTab.Playlists ||
+                               !State.MapsetsExpanded.Value
                 ? compact
-                : Microsoft.Xna.Framework.MathHelper.Lerp(compact, GetExpandedHeight(),
-                    ExpansionProgress);
+                : GetExpandedHeight();
             if (Math.Abs(Height - targetHeight) > 0.001f)
             {
                 Height = targetHeight;
