@@ -13,6 +13,7 @@ using Microsoft.Xna.Framework;
 using Quaver.Shared.Config;
 using Quaver.Shared.Database.Maps;
 using Quaver.Shared.Graphics.Transitions;
+using Quaver.Shared.IPC;
 using Quaver.Shared.Online;
 using Quaver.Shared.Scheduling;
 using Quaver.Shared.Screens.V2;
@@ -154,6 +155,10 @@ namespace Quaver.Shared.Screens
                 OtherGameMapDatabaseCache.RunThread();
 
                 Logger.Important($"Screen has been switched to type: `{screen.Type}`", LogType.Runtime);
+
+                // Launch-time DEBUG IPC commands can arrive before QuaverGame exists or while the initialization
+                // screen is active. Retry them only after a real screen has been installed on the game loop.
+                QuaverIpcHandler.TryFlushPendingDebugScreenSwitchForBuild();
             }
             finally
             {

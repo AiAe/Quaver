@@ -41,6 +41,7 @@ using Quaver.Shared.Graphics.Overlays.Hub;
 using Quaver.Shared.Graphics.Overlays.Volume;
 using Quaver.Shared.Graphics.Transitions;
 using Quaver.Shared.Helpers;
+using Quaver.Shared.IPC;
 using Quaver.Shared.Input.Global;
 using Quaver.Shared.Localization;
 using Quaver.Shared.Online;
@@ -199,6 +200,12 @@ namespace Quaver.Shared
                     case GlobalKeybindActions.ReloadSkin:
                         game.ReloadSkin();
                         break;
+#if DEBUG
+                    case GlobalKeybindActions.DebugToggleSyntheticInput:
+                        if (isKeyPress && !isRelease)
+                            QuaverDebugInputController.ToggleForBuild();
+                        break;
+#endif
                     case GlobalKeybindActions.Back:
                         return GlobalInputHandleResult.Pass;
                     default:
@@ -497,6 +504,7 @@ namespace Quaver.Shared
             if (!IsReadyToUpdate)
                 return;
 
+            QuaverDebugInputController.UpdateForBuild();
             base.Update(gameTime);
 
             if (SteamManager.IsInitialized)
