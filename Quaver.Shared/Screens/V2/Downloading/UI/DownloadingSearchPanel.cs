@@ -390,7 +390,7 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
                 : (EventHandler) ((sender, args) => clicked());
             var button = tabCorners.HasValue
                 ? (RoundedButton) new SegmentedTabButton(tabCorners.Value, clickAction)
-                : new RoundedButton(clickAction);
+                : new DownloadingSearchButton(clickAction);
 
             button.Size = new ScalableVector2(width, Config.Button.Height);
             button.CornerRadius = Config.Button.CornerRadius;
@@ -833,7 +833,15 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
         private static void ApplyAlpha(Drawable drawable, float alpha)
         {
             if (drawable is Button button)
+            {
                 button.IsInteractionEnabled = alpha > 0.001f;
+
+                if (button is DownloadingSearchButton downloadingButton)
+                {
+                    downloadingButton.SetExpansionAlpha(alpha);
+                    return;
+                }
+            }
 
             if (drawable is DownloadingSearchTextbox textbox)
             {

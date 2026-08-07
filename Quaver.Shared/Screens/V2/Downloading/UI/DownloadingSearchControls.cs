@@ -317,6 +317,38 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
         }
     }
 
+    /// <summary>
+    ///     Keeps the dropdown's expansion fade separate from RoundedButton's hover fade.
+    /// </summary>
+    internal sealed class DownloadingSearchButton : RoundedButton
+    {
+        private float HoverAlpha { get; set; } = 1;
+
+        private float ExpansionAlpha { get; set; } = 1;
+
+        public DownloadingSearchButton(EventHandler clickAction = null) : base(clickAction)
+        {
+        }
+
+        public void SetExpansionAlpha(float alpha)
+        {
+            ExpansionAlpha = MathHelper.Clamp(alpha, 0, 1);
+            ApplyCombinedAlpha();
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            // RoundedButton uses Alpha as its hover animation state. Restore that state before
+            // the base update, then apply the expansion fade after the hover interpolation.
+            Alpha = HoverAlpha;
+            base.Update(gameTime);
+            HoverAlpha = Alpha;
+            ApplyCombinedAlpha();
+        }
+
+        private void ApplyCombinedAlpha() => Alpha = HoverAlpha * ExpansionAlpha;
+    }
+
     internal sealed class DownloadingSearchDropdown<T> : Container
     {
         private Bindable<T> Value { get; }
@@ -329,7 +361,7 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
 
         private WobbleFontStore Font { get; }
 
-        private RoundedButton Trigger { get; }
+        private DownloadingSearchButton Trigger { get; }
 
         private Sprite Menu { get; set; }
 
@@ -345,7 +377,7 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
             DropdownConfig = dropdownConfig;
             Size = new ScalableVector2(width, buttonConfig.Height);
 
-            Trigger = new RoundedButton((sender, args) => ToggleMenu())
+            Trigger = new DownloadingSearchButton((sender, args) => ToggleMenu())
             {
                 Parent = this,
                 Size = Size,
@@ -423,7 +455,7 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
             {
                 var option = Options[index];
                 var selected = EqualityComparer<T>.Default.Equals(option.Key, Value.Value);
-                var row = new RoundedButton((sender, args) =>
+                var row = new DownloadingSearchButton((sender, args) =>
                 {
                     Value.Value = option.Key;
                     CloseMenu();
