@@ -31,10 +31,6 @@ namespace Quaver.Shared.Screens.V2.Downloading
             new SkinV2DownloadingButtonConfig();
 
         [Required]
-        public SkinV2DownloadingDropdownConfig Dropdown { get; set; } =
-            new SkinV2DownloadingDropdownConfig();
-
-        [Required]
         public SkinV2DownloadingRangeConfig Range { get; set; } =
             new SkinV2DownloadingRangeConfig();
 
@@ -206,36 +202,6 @@ namespace Quaver.Shared.Screens.V2.Downloading
         [ConfigEditable]
         [SkinColor]
         public string ActiveTextColor { get; set; } = "#FFFFFFFF";
-    }
-
-    public sealed class SkinV2DownloadingDropdownConfig
-    {
-        [Range(0, 2048)]
-        public float MenuGap { get; set; } = SkinV2MarginsConfig.Sm;
-
-        [Range(0, 2048)]
-        public float MenuPadding { get; set; } = SkinV2MarginsConfig.Sm;
-
-        [Range(0, 2048)]
-        public float ItemSpacing { get; set; } = 2;
-
-        [Range(1, 8192)]
-        public float ItemHeight { get; set; } = 32;
-
-        [Range(0, 4096)]
-        public float CornerRadius { get; set; } = SkinV2BorderRadiusConfig.Normal;
-
-        [ConfigEditable]
-        [SkinColor]
-        public string MenuColor { get; set; } = "#061019";
-
-        [ConfigEditable]
-        [SkinColor]
-        public string ItemColor { get; set; } = "#0F2C44FF";
-
-        [ConfigEditable]
-        [SkinColor]
-        public string SelectedItemColor { get; set; } = "#256EAA";
     }
 
     public sealed class SkinV2DownloadingRangeConfig

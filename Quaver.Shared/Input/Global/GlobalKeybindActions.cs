@@ -37,9 +37,6 @@ public enum GlobalKeybindActions : ulong
     SelectionToggleMapPreview        = 28 | LayerSelection,
     SelectionToggleUserProfile       = 29 | LayerSelection,
     SelectionRefresh                 = 30 | LayerSelection,
-#if DEBUG
-    DebugToggleSyntheticInput        = 31 | LayerExceptGameplay,
-#endif
 #pragma warning enable format // @formatter:on
 
     BaseActionMask = (1 << 16) - 1, // bit 15-0

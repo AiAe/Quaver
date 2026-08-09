@@ -41,7 +41,6 @@ using Quaver.Shared.Graphics.Overlays.Hub;
 using Quaver.Shared.Graphics.Overlays.Volume;
 using Quaver.Shared.Graphics.Transitions;
 using Quaver.Shared.Helpers;
-using Quaver.Shared.IPC;
 using Quaver.Shared.Input.Global;
 using Quaver.Shared.Localization;
 using Quaver.Shared.Online;
@@ -200,12 +199,6 @@ namespace Quaver.Shared
                     case GlobalKeybindActions.ReloadSkin:
                         game.ReloadSkin();
                         break;
-#if DEBUG
-                    case GlobalKeybindActions.DebugToggleSyntheticInput:
-                        if (isKeyPress && !isRelease)
-                            QuaverDebugInputController.ToggleForBuild();
-                        break;
-#endif
                     case GlobalKeybindActions.Back:
                         return GlobalInputHandleResult.Pass;
                     default:
@@ -316,52 +309,11 @@ namespace Quaver.Shared
         /// </summary>
         private Dictionary<string, Type> VisualTests { get; } = new Dictionary<string, Type>()
         {
-            {"AutoMod", typeof(AutoModTestScreen)},
             {"Flags", typeof(FlagsTestScreen)},
             {"Global Icons", typeof(GlobalIconsTestScreen)},
             {"Global Gameplay Assets", typeof(GlobalGameplayAssetsTestScreen)},
             {"User Groups", typeof(UserGroupsTestScreen)},
-            {"Main Menu", typeof(MainMenuScreen)},
-            {"ResultsScreen (Multi)", typeof(TestResultsMultiScreen)},
-            {"ResultsScreen", typeof(TestResultsScreen)},
-            {"TournamentOverlay", typeof(TestTournamentOverlayScreen)},
-            {"Editor", typeof(TestEditorScreen)},
-            {"LuaImGui", typeof(TestLuaScriptingScreen)},
-            {"LocalProfileContainer", typeof(TestUserProfileContainerScreen)},
-            {"DifficultyGraph", typeof(TestDifficultyGraphScreen)},
-            {"DownloadingScreen", typeof(DownloadingScreen)},
-            {"Dropdown", typeof(DropdownTestScreen)},
-            {"MenuBorder", typeof(MenuBorderTestScreen)},
-            {"OptionsMenu", typeof(OptionsTestScreen)},
-            {"VolumeController", typeof(TestVolumeControlScreen)},
-            {"ReplayController", typeof(TestReplayControllerScreen)},
-            {"SelectFilterPanel", typeof(FilterPanelTestScreen)},
-            {"SelectJukebox", typeof(TestSelectJukeboxScreen)},
-            {"DrawableMapset", typeof(TestMapsetScreen)},
-            {"DrawableMapset (Multiple)", typeof(TestMapsetsMultipleScreen)},
-            {"DifficultyBarDisplay", typeof(TestScreenDifficultyBar)},
-            {"MapsetScrollContainer", typeof(TestScreenMapsetScrollContainer)},
-            {"DrawableMap", typeof(TestDrawableMapScreen)},
-            {"MapScrollContainer", typeof(TestScreenMapScrollContainer)},
-            {"Leaderboard", typeof(TestLeaderboardScreen)},
-            {"Leaderboard + Maps", typeof(TestLeaderboardWithMapsScreen)},
-            {"DrawableLeaderboardScore", typeof(TestScreenDrawableLeaderboardScore)},
-            {"ModifierSelector", typeof(TestModifierSelectorScreen)},
-            {"CreatePlaylistDialog", typeof(TestScreenCreatePlaylist)},
-            {"SelectionScreen", typeof(SelectionScreen)},
-            {"YesNoDialog", typeof(TestYesNoDialogScreen)},
-            {"DrawablePlaylist", typeof(TestScreenDrawablePlaylist)},
-            {"MenuFooterJukebox", typeof(TestScreenMenuJukebox)},
-            {"MusicPlayerScreen", typeof(MusicPlayerScreen)},
-            {"DrawableListenerList", typeof(TestScreenListenerList)},
-            {"OnlineHub", typeof(TestScreenOnlineHub)},
-            {"OnlineHubDownloads", typeof(TestOnlineHubDownloadsScreen)},
-            {"Notifications", typeof(TestNotificationScreen)},
-            {"ChatOverlay", typeof(TestChatScreen)},
-            {"MultiplayerGameScreen", typeof(MultiplayerGameScreen)},
-            {"MultiplayerLobbyScreen", typeof(MultiplayerLobbyScreen)},
-            {"CheckboxContainer", typeof(TestCheckboxContainerScreen)},
-            {"ButtonPerformance", typeof(ButtonPerformanceTestScreen)},
+            {"V2 Dropdown", typeof(V2DropdownTestScreen)},
         };
 
         public QuaverGame(HotLoader hl) : base(hl, ConfigureSdlVideoBackend())
@@ -504,7 +456,6 @@ namespace Quaver.Shared
             if (!IsReadyToUpdate)
                 return;
 
-            QuaverDebugInputController.UpdateForBuild();
             base.Update(gameTime);
 
             if (SteamManager.IsInitialized)

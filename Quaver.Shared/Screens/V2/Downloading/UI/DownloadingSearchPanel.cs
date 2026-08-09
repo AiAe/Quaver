@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Quaver.API.Helpers;
 using Quaver.Shared.Assets;
 using Quaver.Shared.Screens.Downloading;
+using Quaver.Shared.Screens.V2.UI;
 using Quaver.Shared.Skinning.V2;
 using Wobble;
 using Wobble.Bindables;
@@ -31,6 +32,12 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
         private WobbleFontStore FieldFont { get; }
 
         private WobbleFontStore ButtonFont { get; }
+
+        private WobbleFontStore DropdownFont { get; }
+
+        private SkinV2DropdownConfig DropdownConfig { get; }
+
+        private Container OverlayHost { get; }
 
         private Container LayoutRoot { get; set; }
 
@@ -61,12 +68,16 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
         private int ExtraRowLineCount { get; set; } = 1;
 
         public DownloadingSearchPanel(float width, DownloadingSearchState state,
-            SkinV2DownloadingConfig config)
+            SkinV2DownloadingConfig config, Container overlayHost,
+            SkinV2DropdownConfig dropdownConfig)
         {
             State = state;
             Config = config;
+            OverlayHost = overlayHost;
+            DropdownConfig = dropdownConfig;
             FieldFont = FontManager.GetWobbleFont(config.Field.Font);
             ButtonFont = FontManager.GetWobbleFont(config.Button.Font);
+            DropdownFont = FontManager.GetWobbleFont(dropdownConfig.Font);
             Size = new ScalableVector2(width, config.SearchArea.CompactHeight);
             Tint = SkinV2Color.Parse(config.SearchArea.BackgroundColor);
             ExpansionProgress = state.MapsetsExpanded.Value ? 1 : 0;
@@ -345,29 +356,30 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
             return tabs;
         }
 
-        private DownloadingSearchDropdown<int> CreateKeymodeDropdown() =>
-            new DownloadingSearchDropdown<int>(Config.Button.KeymodeWidth, State.Keymode,
-                GetKeymodeOptions(), ButtonFont, Config.Button, Config.Dropdown);
+        private V2Dropdown<int> CreateKeymodeDropdown() =>
+            CreateDropdown(Config.Button.KeymodeWidth, State.Keymode, GetKeymodeOptions());
 
-        private DownloadingSearchDropdown<DownloadSearchRankedStatus> CreateRankedDropdown() =>
-            new DownloadingSearchDropdown<DownloadSearchRankedStatus>(
-                Config.Button.RankedWidth, State.RankedStatus, GetRankedOptions(),
-                ButtonFont, Config.Button, Config.Dropdown);
+        private V2Dropdown<DownloadSearchRankedStatus> CreateRankedDropdown() =>
+            CreateDropdown(Config.Button.RankedWidth, State.RankedStatus, GetRankedOptions());
 
-        private DownloadingSearchDropdown<DownloadSearchLengthFilter> CreateLengthDropdown() =>
-            new DownloadingSearchDropdown<DownloadSearchLengthFilter>(
-                Config.Button.StaticSelectorWidth, State.LengthFilter, GetLengthOptions(),
-                ButtonFont, Config.Button, Config.Dropdown);
+        private V2Dropdown<DownloadSearchLengthFilter> CreateLengthDropdown() =>
+            CreateDropdown(Config.Button.StaticSelectorWidth, State.LengthFilter, GetLengthOptions());
 
-        private DownloadingSearchDropdown<DownloadSearchComboFilter> CreateComboDropdown() =>
-            new DownloadingSearchDropdown<DownloadSearchComboFilter>(
-                Config.Button.StaticSelectorWidth, State.ComboFilter, GetComboOptions(),
-                ButtonFont, Config.Button, Config.Dropdown);
+        private V2Dropdown<DownloadSearchComboFilter> CreateComboDropdown() =>
+            CreateDropdown(Config.Button.StaticSelectorWidth, State.ComboFilter, GetComboOptions());
 
-        private DownloadingSearchDropdown<DownloadSearchSortBy> CreateSortDropdown() =>
-            new DownloadingSearchDropdown<DownloadSearchSortBy>(
-                Config.Button.SortWidth, State.SortBy, GetSortOptions(),
-                ButtonFont, Config.Button, Config.Dropdown);
+        private V2Dropdown<DownloadSearchSortBy> CreateSortDropdown() =>
+            CreateDropdown(Config.Button.SortWidth, State.SortBy, GetSortOptions());
+
+        private V2Dropdown<T> CreateDropdown<T>(float width, Bindable<T> value,
+            IReadOnlyList<KeyValuePair<T, string>> options)
+        {
+            var entries = new List<DropdownEntry<T>>();
+            foreach (var option in options)
+                entries.Add(new DropdownOption<T>(option.Key, option.Value));
+
+            return new V2Dropdown<T>(width, value, entries, DropdownFont, DropdownConfig, OverlayHost);
+        }
 
         private RoundedButton CreateSortOrderButton() =>
             CreateButton(string.Empty, Config.Button.ExpandWidth, false,
@@ -837,6 +849,12 @@ namespace Quaver.Shared.Screens.V2.Downloading.UI
 
         private static void ApplyAlpha(Drawable drawable, float alpha)
         {
+            if (drawable is V2DropdownBase dropdown)
+            {
+                dropdown.SetExternalAlphaInternal(alpha);
+                return;
+            }
+
             if (drawable is Button button)
             {
                 button.IsInteractionEnabled = alpha > 0.001f;

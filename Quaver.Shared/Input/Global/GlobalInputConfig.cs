@@ -362,9 +362,6 @@ namespace Quaver.Shared.Input.Global
                 new Keybind(KeyModifiers.Free, Keys.F9)
             ]),
             [GlobalKeybindActions.ReloadSkin] = new KeybindList(new Keybind([KeyModifiers.Ctrl, KeyModifiers.Free], Keys.S)),
-#if DEBUG
-            [GlobalKeybindActions.DebugToggleSyntheticInput] = new KeybindList(new Keybind([KeyModifiers.Ctrl, KeyModifiers.Free], Keys.F10)),
-#endif
             [GlobalKeybindActions.Back] = new KeybindList(new Keybind(KeyModifiers.Free, Keys.Escape)),
             [GlobalKeybindActions.IncreaseRate] = new KeybindList(new Keybind([KeyModifiers.Ctrl], Keys.OemPlus)),
             [GlobalKeybindActions.DecreaseRate] = new KeybindList(new Keybind([KeyModifiers.Ctrl], Keys.OemMinus)),

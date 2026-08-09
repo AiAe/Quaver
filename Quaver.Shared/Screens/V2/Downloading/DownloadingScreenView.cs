@@ -216,7 +216,8 @@ namespace Quaver.Shared.Screens.V2.Downloading
             contentRow.SetItemOptions(rightSpacer, FixedBasis(Config.Layout.HorizontalPadding));
 
             SearchPanel = new DownloadingSearchPanel(1,
-                ((DownloadingScreen) Screen).SearchState, Config)
+                ((DownloadingScreen) Screen).SearchState, Config, PreviewRoot,
+                RootConfig.Shared.Dropdown)
             {
                 Parent = BodyLayout
             };
@@ -291,7 +292,7 @@ namespace Quaver.Shared.Screens.V2.Downloading
             }
 
             // The dropdown menus are children of SearchPanel. Keep the panel first in the
-            // flex layout, but move it after the mapset container in draw order so open menus
+            // flex layout, but move it after the mapset container in drawable child order so open menus
             // render above mapsets instead of being covered by them.
             SearchPanel.Parent = BodyLayout;
             BodyLayout.SetItemOptions(SearchPanel, new FlexItemOptions
@@ -317,7 +318,7 @@ namespace Quaver.Shared.Screens.V2.Downloading
                     "Screens.Downloading.Button", SearchPanel),
                 new SkinEditorTarget("downloading-search-dropdowns",
                     LocalizationManager.Get("SkinEditor_Component_SearchDropdowns"),
-                    "Screens.Downloading.Dropdown", SearchPanel),
+                    "Shared.Dropdown", SearchPanel),
                 new SkinEditorTarget("downloading-search-sliders",
                     LocalizationManager.Get("SkinEditor_Component_SearchSliders"),
                     "Screens.Downloading.Range", SearchPanel),
