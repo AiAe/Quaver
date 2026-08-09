@@ -26,16 +26,6 @@
 - Use Rider MCP's `build_solution_start` followed by `build_solution_state` only when Rider MCP is unavailable or not ready, when the issue depends on generated/build-time behavior, when solution-wide compiler validation is required, or when the user explicitly requests a build or final build verification. Prefer targeted `filesToRebuild` when it is sufficient; use a full rebuild only when necessary.
 - Rider inspections do not replace all compiler and runtime validation. After a targeted or final build, report build errors separately from Rider inspections and do not describe warnings or typos as compilation failures.
 
-## DEBUG IPC Screen Testing
-
-- DEBUG builds expose the screen-switch IPC route `quaver://debug/screen/<name>` through `Quaver.Shared/IPC/QuaverIpcHandler.cs`.
-- Use it to put the running game on a deterministic screen before inspecting or testing UI changes. Supported targets are `menu`, `selection`, `downloading`, `lobby`, `music`, `theater`, `importing`, and `multiplayer` when an active multiplayer game exists. Common aliases such as `select`, `download`, `theatre`, and `main-menu` are also supported.
-- Example: `rtk dotnet run --project Quaver -- quaver://debug/screen/selection` sends the request through the existing single-instance IPC path when a DEBUG game instance is already running.
-- The route is compiled only under `DEBUG`; never depend on it in Release builds or add release-only behavior around it.
-- Screen switches must continue through `QuaverScreen.Exit(...)` and the normal `QuaverScreenFactory` resolution so screen cleanup, transitions, legacy/V2 selection, and shared navigation lifecycle remain valid.
-- Do not add context-dependent targets such as gameplay, loading, or results without supplying the map/game/replay state those screens require. Prefer adding a focused DEBUG IPC command with explicit state setup instead of constructing an invalid screen.
-- When testing a screen, use DEBUG IPC to reach the screen, then inspect the rendered result and exercise the screen through its normal UI. Validate code changes with Rider diagnostics first when available, followed by a targeted build when compiler or conditional-compilation behavior needs verification.
-
 ## New V2 Screens and Skinning
 
 These rules apply whenever a new screen is created in the V2 screen architecture. They do not require retroactive changes to existing screens or skin configurations.
